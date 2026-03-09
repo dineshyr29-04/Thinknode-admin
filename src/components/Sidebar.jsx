@@ -3,10 +3,9 @@ import { NavLink } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import {
   LayoutDashboard, Users, FolderKanban, Layers, Zap,
-  Files, CreditCard, Settings, Code2, X
+  Files, CreditCard, Settings, X
 } from 'lucide-react';
 import clsx from 'clsx';
-import {}
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/clients', label: 'Clients', icon: Users },
@@ -55,8 +54,8 @@ export default function Sidebar() {
       >
         {/* ── Logo ─────────────────────────────── */}
         <div className="flex items-center gap-3 h-16 px-[18px] border-b border-white/[0.06] flex-shrink-0">
-          <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/40">
-            <Code2 size={17} className="text-white" />
+          <div className="flex-shrink-0 w-9 h-9 rounded-xl overflow-hidden shadow-lg shadow-blue-500/40 bg-slate-800">
+            <img src="/logo.jpeg" alt="ThinkNode" className="w-full h-full object-cover" />
           </div>
 
           {/* Title — fades in with labels */}
