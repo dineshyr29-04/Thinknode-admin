@@ -6,7 +6,7 @@ import {
   Files, CreditCard, Settings, Code2, X
 } from 'lucide-react';
 import clsx from 'clsx';
-
+import {}
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/clients', label: 'Clients', icon: Users },
@@ -103,8 +103,8 @@ export default function Sidebar() {
                   className={({ isActive }) => clsx(
                     'group relative flex items-center gap-3.5 px-3 py-[11px] rounded-xl text-sm font-medium transition-colors duration-150',
                     isActive
-                      ? 'bg-blue-600/90 text-white shadow-lg shadow-blue-600/30'
-                      : 'text-slate-400 hover:text-white hover:bg-white/[0.07]'
+                      ? 'bg-black-600/90 text-white shadow-lg shadow-blue-600/30'
+                      : 'text-violet-100 hover:text-white hover:bg-white/[0.07]'
                   )}
                 >
                   {({ isActive }) => (
