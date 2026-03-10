@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { Bell, Sun, Moon, Search, X, Menu } from 'lucide-react';
 
+
 const pageTitles = {
   '/': 'Dashboard',
   '/clients': 'Clients',
@@ -103,9 +104,11 @@ export default function Navbar() {
       </div>
 
       {/* Avatar */}
+      <a href="/pages/Settings">
       <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer">
         TN
       </div>
+      </a>
     </header>
   );
 }
