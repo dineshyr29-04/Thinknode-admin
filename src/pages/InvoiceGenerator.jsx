@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, Trash2, Printer, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Trash2, Printer, RotateCcw, Save, AlertTriangle, X } from 'lucide-react';
 
 const SERVICE_PRESETS = [
   { label: 'Web Development',  rate: 20000 },
@@ -23,6 +23,18 @@ const ACCENTS = [
   '#d97706', '#dc2626', '#7c3aed', '#db2777',
 ];
 
+// ── Persistent invoice counter ─────────────────────────────────────────────
+const COUNTER_KEY = 'thinknode_inv_counter';
+
+const getNextNumber = () => {
+  const n = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10) + 1;
+  return n;
+};
+
+const saveCounter = (n) => localStorage.setItem(COUNTER_KEY, String(n));
+
+const fmtNumber = (n) => `INV-${String(n).padStart(3, '0')}`;
+
 const todayStr = () => new Date().toISOString().split('T')[0];
 const addDays = (d, n) => {
   const dt = new Date(d);
@@ -31,8 +43,9 @@ const addDays = (d, n) => {
 };
 
 
-const makeDefault = () => ({
-  number: 'INV-001',
+const makeDefault = (counter) => ({
+  _counter: counter,
+  number: fmtNumber(counter),
   date: todayStr(),
   dueDate: addDays(todayStr(), 30),
   from: {
@@ -88,7 +101,14 @@ const Card = ({ title, children }) => (
 );
 
 export default function InvoiceGenerator() {
-  const [inv, setInv] = useState(makeDefault);
+  // On first load, read the last saved counter and open at next number
+  const initCounter = useRef(getNextNumber());
+  const [inv, setInv] = useState(() => makeDefault(initCounter.current));
+  const [saved, setSaved] = useState(false);
+  const [warn, setWarn] = useState(false);
+  const warnTimer = useRef(null);
+  const [warnProgress, setWarnProgress] = useState(100);
+  const warnInterval = useRef(null);
 
   /* ── inject print-only styles ── */
   useEffect(() => {
@@ -117,6 +137,50 @@ export default function InvoiceGenerator() {
     document.head.appendChild(s);
     return () => { const el = document.getElementById(id); el?.remove(); };
   }, []);
+
+  /* ── Save & advance counter ── */
+  const handleSave = () => {
+    saveCounter(inv._counter);
+    const next = inv._counter + 1;
+    initCounter.current = next;
+    saveCounter(next - 1); // record this one as used
+    setSaved(true);
+    setWarn(false);
+    clearTimeout(warnTimer.current);
+    clearInterval(warnInterval.current);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  /* ── Actually create next invoice ── */
+  const doNewInvoice = () => {
+    const next = (parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10)) + 1;
+    initCounter.current = next;
+    setInv(makeDefault(next));
+    setSaved(false);
+    setWarn(false);
+    clearTimeout(warnTimer.current);
+    clearInterval(warnInterval.current);
+  };
+
+  /* ── New Invoice button — warn if unsaved ── */
+  const handleReset = () => {
+    if (!saved) {
+      setWarn(true);
+      setWarnProgress(100);
+      clearTimeout(warnTimer.current);
+      clearInterval(warnInterval.current);
+      warnTimer.current = setTimeout(() => setWarn(false), 5000);
+      const start = Date.now();
+      warnInterval.current = setInterval(() => {
+        const elapsed = Date.now() - start;
+        const pct = Math.max(0, 100 - (elapsed / 5000) * 100);
+        setWarnProgress(pct);
+        if (pct === 0) clearInterval(warnInterval.current);
+      }, 50);
+    } else {
+      doNewInvoice();
+    }
+  };
 
   /* ── totals ── */
   const subtotal = inv.items.reduce(
@@ -148,6 +212,53 @@ export default function InvoiceGenerator() {
   return (
     <div className="p-4 sm:p-6 min-h-screen">
 
+      {/* ── Unsaved-warning toast (drops from top) ── */}
+      <div
+        className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none"
+        style={{ paddingTop: '0' }}
+      >
+        <div
+          className="pointer-events-auto w-full max-w-md mx-4 mt-4 rounded-2xl shadow-2xl overflow-hidden border border-amber-300 dark:border-amber-600/60 transition-all duration-500"
+          style={{
+            transform: warn ? 'translateY(0)' : 'translateY(-140%)',
+            opacity: warn ? 1 : 0,
+            background: 'rgba(255,251,235,0.97)',
+          }}
+        >
+          <div className="flex items-start gap-3 px-4 pt-4 pb-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle size={16} className="text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-amber-900">Invoice not saved!</p>
+              <p className="text-xs text-amber-700 mt-0.5">Save the current invoice number first, or discard and open a new one.</p>
+            </div>
+            <button onClick={() => { setWarn(false); clearTimeout(warnTimer.current); clearInterval(warnInterval.current); }} className="text-amber-400 hover:text-amber-700 transition-colors flex-shrink-0"><X size={15} /></button>
+          </div>
+          <div className="flex gap-2 px-4 pb-4">
+            <button
+              onClick={() => { handleSave(); setTimeout(doNewInvoice, 100); }}
+              className="flex-1 py-2 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-colors"
+            >
+              Save &amp; New Invoice
+            </button>
+            <button
+              onClick={doNewInvoice}
+              className="flex-1 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-amber-50 text-amber-700 border border-amber-200 transition-colors"
+            >
+              Discard &amp; New
+            </button>
+          </div>
+          {/* progress bar */}
+          <div className="h-1 bg-amber-100">
+            <div
+              className="h-full bg-amber-400 transition-none"
+              style={{ width: `${warnProgress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* ── Page header ── */}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
@@ -158,10 +269,20 @@ export default function InvoiceGenerator() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => setInv(makeDefault())}
+            onClick={handleReset}
             className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
-            <RotateCcw size={13} /> Reset
+            <RotateCcw size={13} /> New Invoice
+          </button>
+          <button
+            onClick={handleSave}
+            className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl border transition-colors ${
+              saved
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-700 dark:text-emerald-400'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+            }`}
+          >
+            <Save size={13} /> {saved ? 'Saved!' : 'Save #'}
           </button>
           <button
             onClick={() => window.print()}
@@ -181,7 +302,20 @@ export default function InvoiceGenerator() {
           {/* Invoice meta */}
           <Card title="Invoice Details">
             <div className="grid grid-cols-3 gap-3">
-              <FormInput label="Invoice #"   value={inv.number}  onChange={e => set('number',  e.target.value)} placeholder="INV-001" />
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                  Invoice #
+                </label>
+                <input
+                  value={inv.number}
+                  onChange={e => set('number', e.target.value)}
+                  placeholder="INV-001"
+                  className={iCls + ' font-mono font-semibold'}
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Auto: <span className="font-mono text-indigo-500">{fmtNumber(inv._counter)}</span> · editable
+                </p>
+              </div>
               <FormInput label="Issue Date"  type="date" value={inv.date}    onChange={e => set('date',    e.target.value)} />
               <FormInput label="Due Date"    type="date" value={inv.dueDate} onChange={e => set('dueDate', e.target.value)} />
             </div>
