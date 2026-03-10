@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import {
   LayoutDashboard, Users, FolderKanban, Layers, Zap,
@@ -138,7 +138,7 @@ export default function Sidebar() {
 
         {/* ── Footer / User ─────────────────────── */}
         <div className="p-3 border-t border-white/[0.06] flex-shrink-0">
-          <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/[0.07] cursor-pointer transition-colors">
+          <Link to="/settings" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/[0.07] cursor-pointer transition-colors">
             <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-md">
               TN
             </div>
@@ -152,7 +152,7 @@ export default function Sidebar() {
                 <p className="text-slate-400 text-[11px] whitespace-nowrap">Online</p>
               </div>
             </div>
-          </div>
+          </Link>
         </div>
       </aside>
     </>

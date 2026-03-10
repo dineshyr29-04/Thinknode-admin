@@ -20,7 +20,7 @@ function Layout() {
       <Sidebar />
       <div className={clsx('flex flex-col flex-1 min-w-0 transition-all duration-300')}>
         <Navbar />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto scroll-smooth scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/clients" element={<Clients />} />
