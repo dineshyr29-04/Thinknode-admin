@@ -77,7 +77,7 @@ export default function Clients() {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
         <div className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl px-4 py-2.5 border border-slate-200 dark:border-slate-700 flex-1 max-w-sm">
@@ -94,7 +94,7 @@ export default function Clients() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: 'Total', value: clients.length, color: 'text-blue-500' },
-          { label: 'Active Projects', value: clients.filter(c => c.projectStatus === 'Active').length, color: 'text-purple-500' },
+          { label: 'Active Projects', value: clients.filter(c => c.projectStatus === 'Active' || c.projectStatus === 'Development').length, color: 'text-purple-500' },
           { label: 'Paid', value: clients.filter(c => c.paymentStatus === 'Paid').length, color: 'text-emerald-500' },
           { label: 'Pending Payment', value: clients.filter(c => c.paymentStatus === 'Pending').length, color: 'text-red-500' },
         ].map(s => (
@@ -114,7 +114,7 @@ export default function Clients() {
                 <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 px-5 py-3.5">Client</th>
                 <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 px-5 py-3.5 hidden md:table-cell">Contact</th>
                 <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 px-5 py-3.5">Service</th>
-                <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 px-5 py-3.5 hidden lg:table-cell">Project</th>
+                <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 px-5 py-3.5 hidden lg:table-cell">Project Status</th>
                 <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 px-5 py-3.5">Payment</th>
                 <th className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400 px-5 py-3.5">Actions</th>
               </tr>
@@ -141,7 +141,7 @@ export default function Clients() {
                     <span className="text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">{client.service}</span>
                   </td>
                   <td className="px-5 py-4 hidden lg:table-cell">
-                    <span className={clsx('text-xs px-2 py-1 rounded-full font-medium', statusColors[client.projectStatus])}>{client.projectStatus}</span>
+                    <span className={clsx('text-xs px-2 py-1 rounded-full font-medium', statusColors[client.projectStatus] ?? statusColors.Active)}>{client.projectStatus}</span>
                   </td>
                   <td className="px-5 py-4">
                     <span className={clsx('text-xs px-2 py-1 rounded-full font-medium', paymentColors[client.paymentStatus])}>{client.paymentStatus}</span>

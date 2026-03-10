@@ -2,13 +2,28 @@ import { useApp } from '../context/AppContext';
 import StatsCard from '../components/StatsCard';
 import WorkflowStatus from '../components/WorkflowStatus';
 import {
-  Users, FolderKanban, Clock, IndianRupee, Zap
+  Users, FolderKanban, Clock, IndianRupee, Zap,
+  RefreshCw, X, CheckCircle2, AlertTriangle, Info, Sparkles
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { revenueData, serviceBreakdown, activityData } from '../data/dummyData';
+import clsx from 'clsx';
+
+const logIcons = {
+  sync: <RefreshCw size={12} className="text-blue-400" />,
+  success: <CheckCircle2 size={12} className="text-emerald-400" />,
+  warning: <AlertTriangle size={12} className="text-amber-400" />,
+  info: <Info size={12} className="text-slate-400" />,
+};
+const logBorder = {
+  sync: 'border-l-blue-500',
+  success: 'border-l-emerald-500',
+  warning: 'border-l-amber-500',
+  info: 'border-l-slate-400',
+};
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload?.length) {
@@ -27,7 +42,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Dashboard() {
-  const { stats, workflows, projects, clients } = useApp();
+  const { stats, workflows, projects, clients, syncLog, dismissLog, clearLog } = useApp();
 
   const statsCards = [
     { title: 'Total Clients', value: stats.totalClients, icon: Users, color: 'blue', trend: 12, subtitle: 'All time' },
@@ -40,8 +55,27 @@ export default function Dashboard() {
   const recentProjects = projects.slice(0, 5);
   const recentClients = clients.slice(0, 4);
 
+  const warnings = syncLog.filter(e => e.type === 'warning');
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
+
+      {/* ── Sync Warning Banner ── */}
+      {warnings.length > 0 && (
+        <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-2xl px-5 py-4 animate-fade-in">
+          <AlertTriangle size={18} className="text-amber-500 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Attention Required</p>
+            <ul className="mt-1 space-y-0.5">
+              {warnings.map(w => (
+                <li key={w.id} className="text-xs text-amber-700 dark:text-amber-400">{w.message}</li>
+              ))}
+            </ul>
+          </div>
+          <button onClick={() => warnings.forEach(w => dismissLog(w.id))} className="text-amber-400 hover:text-amber-600 transition-colors flex-shrink-0"><X size={16} /></button>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         {statsCards.map(card => <StatsCard key={card.title} {...card} />)}
@@ -154,6 +188,49 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* ── Sync Activity Log ── */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+          <div className="flex items-center gap-2">
+            <Sparkles size={14} className="text-blue-500" />
+            <h2 className="text-sm font-semibold text-slate-800 dark:text-white">Cross-Page Sync Activity</h2>
+            {syncLog.length > 0 && (
+              <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full">{syncLog.length}</span>
+            )}
+          </div>
+          {syncLog.length > 0 && (
+            <button onClick={clearLog} className="text-xs text-slate-400 hover:text-red-400 transition-colors flex items-center gap-1">
+              <X size={12} /> Clear all
+            </button>
+          )}
+        </div>
+        <div className="divide-y divide-slate-50 dark:divide-slate-700/50">
+          {syncLog.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-2">
+              <CheckCircle2 size={28} className="text-emerald-400 opacity-60" />
+              <p className="text-sm text-slate-400">All systems synced — no recent activity</p>
+            </div>
+          ) : (
+            syncLog.map(entry => (
+              <div
+                key={entry.id}
+                className={clsx(
+                  'flex items-start gap-3 px-5 py-3 border-l-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors',
+                  logBorder[entry.type] ?? 'border-l-slate-300'
+                )}
+              >
+                <span className="mt-0.5 flex-shrink-0">{logIcons[entry.type] ?? logIcons.info}</span>
+                <p className="flex-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{entry.message}</p>
+                <span className="text-[10px] text-slate-400 whitespace-nowrap mt-0.5">{entry.time}</span>
+                <button onClick={() => dismissLog(entry.id)} className="text-slate-300 hover:text-red-400 transition-colors flex-shrink-0 mt-0.5">
+                  <X size={12} />
+                </button>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

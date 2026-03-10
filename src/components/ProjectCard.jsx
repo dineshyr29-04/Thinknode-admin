@@ -1,4 +1,4 @@
-import { Paperclip, Calendar, Tag } from 'lucide-react';
+import { Paperclip, Calendar, Edit3, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 
 const priorityMap = {
@@ -14,7 +14,7 @@ const serviceColorMap = {
   'n8n Automation': 'bg-emerald-500',
 };
 
-export default function ProjectCard({ project, dragHandleProps }) {
+export default function ProjectCard({ project, dragHandleProps, onEdit, onDelete }) {
   const isOverdue = new Date(project.deadline) < new Date() && project.column !== 'Delivered';
 
   return (
@@ -56,12 +56,29 @@ export default function ProjectCard({ project, dragHandleProps }) {
           <span>{new Date(project.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
           {isOverdue && <span className="font-medium">· Overdue</span>}
         </div>
-        {project.attachments > 0 && (
-          <div className="flex items-center gap-1 text-slate-400">
-            <Paperclip size={11} />
-            <span>{project.attachments}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-1">
+          {project.attachments > 0 && (
+            <span className="flex items-center gap-0.5 text-slate-400 mr-1">
+              <Paperclip size={11} />{project.attachments}
+            </span>
+          )}
+          {onEdit && (
+            <button
+              onClick={e => { e.stopPropagation(); onEdit(project); }}
+              className="p-1 rounded text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            >
+              <Edit3 size={11} />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={e => { e.stopPropagation(); onDelete(project.id); }}
+              className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              <Trash2 size={11} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

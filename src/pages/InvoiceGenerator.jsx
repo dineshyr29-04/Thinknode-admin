@@ -19,8 +19,8 @@ const CURRENCIES = [
 ];
 
 const ACCENTS = [
-  '#6366f1', '#2563eb', '#0891b2', '#059669',
-  '#d97706', '#dc2626', '#7c3aed', '#db2777', '#0f172a',
+  '#0f172a', '#2563eb', '#0891b2', '#059669',
+  '#d97706', '#dc2626', '#7c3aed', '#db2777',
 ];
 
 const todayStr = () => new Date().toISOString().split('T')[0];
@@ -29,6 +29,7 @@ const addDays = (d, n) => {
   dt.setDate(dt.getDate() + n);
   return dt.toISOString().split('T')[0];
 };
+
 
 const makeDefault = () => ({
   number: 'INV-001',

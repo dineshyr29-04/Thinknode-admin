@@ -30,7 +30,7 @@ const colCountColors = {
   Delivered: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
 };
 
-function SortableCard({ project }) {
+function SortableCard({ project, onEdit, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: project.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -39,12 +39,12 @@ function SortableCard({ project }) {
   };
   return (
     <div ref={setNodeRef} style={style}>
-      <ProjectCard project={project} dragHandleProps={{ ...attributes, ...listeners }} />
+      <ProjectCard project={project} dragHandleProps={{ ...attributes, ...listeners }} onEdit={onEdit} onDelete={onDelete} />
     </div>
   );
 }
 
-function Column({ col, projects }) {
+function Column({ col, projects, onEdit, onDelete }) {
   const { setNodeRef, isOver } = useDroppable({ id: col });
 
   return (
@@ -53,7 +53,7 @@ function Column({ col, projects }) {
       isOver ? 'bg-blue-50 dark:bg-blue-900/10' : ''
     )} ref={setNodeRef}>
       <SortableContext items={projects.map(p => p.id)} strategy={verticalListSortingStrategy}>
-        {projects.map(p => <SortableCard key={p.id} project={p} />)}
+        {projects.map(p => <SortableCard key={p.id} project={p} onEdit={onEdit} onDelete={onDelete} />)}
       </SortableContext>
       {projects.length === 0 && (
         <div className={clsx('border-2 border-dashed rounded-xl p-6 text-center transition-colors',
@@ -66,7 +66,7 @@ function Column({ col, projects }) {
   );
 }
 
-export default function KanbanBoard() {
+export default function KanbanBoard({ onEdit, onDelete }) {
   const { projects, moveProject } = useApp();
   const [activeId, setActiveId] = useState(null);
 
@@ -106,7 +106,7 @@ export default function KanbanBoard() {
                   {colProjects.length}
                 </span>
               </div>
-              <Column col={col} projects={colProjects} />
+              <Column col={col} projects={colProjects} onEdit={onEdit} onDelete={onDelete} />
             </div>
           );
         })}
