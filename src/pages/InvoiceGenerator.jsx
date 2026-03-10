@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Printer, RotateCcw, Save, AlertTriangle, X } from 'lucide-react';
+import { Plus, Trash2, Printer, RotateCcw, Save, AlertTriangle, X, Download, FileDown, Code2, FileJson, ChevronDown, RefreshCw } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 const SERVICE_PRESETS = [
   { label: 'Web Development',  rate: 20000 },
@@ -101,14 +102,18 @@ const Card = ({ title, children }) => (
 );
 
 export default function InvoiceGenerator() {
+  const { addPayment, updatePayment, payments } = useApp();
   // On first load, read the last saved counter and open at next number
   const initCounter = useRef(getNextNumber());
   const [inv, setInv] = useState(() => makeDefault(initCounter.current));
   const [saved, setSaved] = useState(false);
+  const [synced, setSynced] = useState(false);
   const [warn, setWarn] = useState(false);
   const warnTimer = useRef(null);
   const [warnProgress, setWarnProgress] = useState(100);
   const warnInterval = useRef(null);
+  const [showExport, setShowExport] = useState(false);
+  const exportRef = useRef(null);
 
   /* ── inject print-only styles ── */
   useEffect(() => {
@@ -145,10 +150,45 @@ export default function InvoiceGenerator() {
     initCounter.current = next;
     saveCounter(next - 1); // record this one as used
     setSaved(true);
+    setSynced(false);
     setWarn(false);
     clearTimeout(warnTimer.current);
     clearInterval(warnInterval.current);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 3000);
+
+    // ── Sync to Payments page ──────────────────────────────────────────
+    // (runs after render so `total` is available via closure)
+    setTimeout(() => {
+      const invId = inv.number || fmtNumber(inv._counter);
+      const payEntry = {
+        id: invId,
+        client: inv.to.name || '—',
+        service: inv.items[0]?.desc || 'Invoice',
+        amount: Math.round(
+          inv.items.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.rate) || 0), 0) *
+          (1 - (Number(inv.discount) || 0) / 100) *
+          (1 + (Number(inv.tax) || 0) / 100)
+        ),
+        status: 'Pending',
+        date: inv.date,
+        due: inv.dueDate,
+      };
+      const exists = payments.some(p => p.id === invId);
+      if (exists) {
+        // preserve status that may have been changed in Payments page
+        updatePayment(invId, {
+          client: payEntry.client,
+          service: payEntry.service,
+          amount: payEntry.amount,
+          date: payEntry.date,
+          due: payEntry.due,
+        });
+      } else {
+        addPayment(payEntry);
+      }
+      setSynced(true);
+      setTimeout(() => setSynced(false), 4000);
+    }, 0);
   };
 
   /* ── Actually create next invoice ── */
@@ -182,6 +222,16 @@ export default function InvoiceGenerator() {
     }
   };
 
+  /* ── close export dropdown on outside click ── */
+  useEffect(() => {
+    if (!showExport) return;
+    const handler = (e) => {
+      if (exportRef.current && !exportRef.current.contains(e.target)) setShowExport(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showExport]);
+
   /* ── totals ── */
   const subtotal = inv.items.reduce(
     (s, i) => s + (Number(i.qty) || 0) * (Number(i.rate) || 0), 0
@@ -194,6 +244,139 @@ export default function InvoiceGenerator() {
     `${inv.currency}${Number(n).toLocaleString('en-IN', {
       minimumFractionDigits: 2, maximumFractionDigits: 2,
     })}`;
+
+  /* ── build standalone invoice HTML for export ── */
+  const buildInvoiceHTML = () => {
+    const ac = inv.accent;
+    const itemRows = inv.items.map((item, i) => {
+      const amt = (Number(item.qty) || 0) * (Number(item.rate) || 0);
+      return `<tr style="background:${i % 2 === 1 ? '#f8fafc' : '#fff'}">
+        <td style="padding:10px 12px;color:#94a3b8;font-size:12px">${i + 1}</td>
+        <td style="padding:10px 12px;color:#334155;font-weight:600">${item.desc || '—'}</td>
+        <td style="padding:10px 12px;text-align:center;color:#475569">${item.qty}</td>
+        <td style="padding:10px 12px;text-align:right;color:#475569">${fmt(item.rate)}</td>
+        <td style="padding:10px 12px;text-align:right;font-weight:700;color:#1e293b">${fmt(amt)}</td>
+      </tr>`;
+    }).join('');
+    const discRow = Number(inv.discount) > 0
+      ? `<div style="display:flex;justify-content:space-between;color:#059669;font-size:13px;padding:4px 0"><span>Discount (${inv.discount}%)</span><span>− ${fmt(discAmt)}</span></div>` : '';
+    const taxRow = Number(inv.tax) > 0
+      ? `<div style="display:flex;justify-content:space-between;color:#64748b;font-size:13px;padding:4px 0"><span>Tax / GST (${inv.tax}%)</span><span>${fmt(taxAmt)}</span></div>` : '';
+    const notesSection = inv.notes.trim()
+      ? `<div style="border-radius:12px;padding:16px;border:1px solid #f1f5f9;background:${ac}14;margin-top:20px">
+          <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;color:${ac}">Notes &amp; Payment Details</div>
+          <p style="font-size:12px;color:#64748b;white-space:pre-line;line-height:1.6;margin:0">${inv.notes}</p>
+        </div>` : '';
+    const fromAddr = inv.from.address ? `<div style="font-size:12px;color:#64748b;margin-top:6px;white-space:pre-line;line-height:1.5">${inv.from.address}</div>` : '';
+    const toAddr = inv.to.address ? `<div style="font-size:12px;color:#64748b;margin-top:6px;white-space:pre-line;line-height:1.5">${inv.to.address}</div>` : '';
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>${inv.number} — ${inv.from.name || 'Invoice'}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter','Segoe UI',system-ui,sans-serif;color:#1e293b;background:#f8fafc;padding:40px 20px}
+    .inv{max-width:740px;margin:0 auto;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.12);overflow:hidden}
+    @media print{body{background:#fff;padding:0}.inv{max-width:100%;border-radius:0;box-shadow:none}@page{size:A4 portrait;margin:10mm}}
+  </style>
+</head>
+<body>
+  <div class="inv">
+    <div style="background:${ac};padding:32px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:32px;font-weight:900;color:rgba(255,255,255,.9);letter-spacing:-.02em">INVOICE</div>
+          <div style="margin-top:8px;font-size:14px;font-weight:600;color:rgba(255,255,255,.6)">${inv.number || 'INV-000'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:700;color:rgba(255,255,255,.9)">${inv.from.name || 'Your Business'}</div>
+          ${inv.from.email ? `<div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px">${inv.from.email}</div>` : ''}
+          ${inv.from.phone ? `<div style="font-size:12px;color:rgba(255,255,255,.6)">${inv.from.phone}</div>` : ''}
+          ${inv.from.gstin ? `<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px">${inv.from.gstin}</div>` : ''}
+        </div>
+      </div>
+    </div>
+    <div style="padding:32px">
+      <div style="display:flex;gap:40px;margin-bottom:20px">
+        <div><div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;margin-bottom:4px">Issue Date</div><div style="font-size:14px;font-weight:600;color:#334155">${inv.date || '—'}</div></div>
+        <div><div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;margin-bottom:4px">Due Date</div><div style="font-size:14px;font-weight:600;color:#334155">${inv.dueDate || '—'}</div></div>
+      </div>
+      <hr style="border:none;border-top:1px solid #f1f5f9;margin-bottom:20px"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px">
+        <div>
+          <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:${ac};margin-bottom:6px">From</div>
+          <div style="font-size:14px;font-weight:700;color:#1e293b">${inv.from.name || '—'}</div>
+          ${fromAddr}
+          ${inv.from.email ? `<div style="font-size:12px;color:#64748b;margin-top:2px">${inv.from.email}</div>` : ''}
+          ${inv.from.phone ? `<div style="font-size:12px;color:#64748b">${inv.from.phone}</div>` : ''}
+          ${inv.from.gstin ? `<div style="font-size:12px;color:#94a3b8;margin-top:4px">${inv.from.gstin}</div>` : ''}
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:${ac};margin-bottom:6px">Bill To</div>
+          <div style="font-size:14px;font-weight:700;color:#1e293b">${inv.to.name || '—'}</div>
+          ${toAddr}
+          ${inv.to.email ? `<div style="font-size:12px;color:#64748b;margin-top:2px">${inv.to.email}</div>` : ''}
+          ${inv.to.phone ? `<div style="font-size:12px;color:#64748b">${inv.to.phone}</div>` : ''}
+          ${inv.to.gstin ? `<div style="font-size:12px;color:#94a3b8;margin-top:4px">${inv.to.gstin}</div>` : ''}
+        </div>
+      </div>
+      <div style="border-radius:12px;overflow:hidden;border:1px solid #f1f5f9;margin-bottom:20px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:${ac}1a">
+            <th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:${ac}">#</th>
+            <th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:${ac}">Description</th>
+            <th style="padding:10px 12px;text-align:center;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:${ac}">Qty</th>
+            <th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:${ac}">Rate</th>
+            <th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:${ac}">Amount</th>
+          </tr></thead>
+          <tbody>${itemRows}</tbody>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
+        <div style="width:220px">
+          <div style="display:flex;justify-content:space-between;color:#64748b;font-size:13px;padding:4px 0"><span>Subtotal</span><span style="font-weight:500">${fmt(subtotal)}</span></div>
+          ${discRow}${taxRow}
+          <div style="border-top:1px solid #e2e8f0;margin:12px 0"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;color:#1e293b;font-size:14px">Total Due</span>
+            <span style="font-size:20px;font-weight:900;color:${ac}">${fmt(total)}</span>
+          </div>
+        </div>
+      </div>
+      ${notesSection}
+      <div style="border-top:1px solid #f1f5f9;padding-top:16px;padding-bottom:4px;text-align:center;margin-top:20px">
+        <p style="font-size:11px;color:#94a3b8;letter-spacing:.05em">Generated via ThinkNode · ${new Date().getFullYear()}</p>
+      </div>
+    </div>
+  </div>
+</body></html>`;
+  };
+
+  /* ── download helpers ── */
+  const triggerDownload = (content, filename, mime) => {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadHTML = () =>
+    triggerDownload(buildInvoiceHTML(), `${inv.number || 'invoice'}.html`, 'text/html;charset=utf-8');
+
+  const handleSavePDF = () => {
+    const win = window.open('', '_blank', 'width=820,height=1000');
+    win.document.write(buildInvoiceHTML());
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 600);
+  };
+
+  const handleDownloadJSON = () =>
+    triggerDownload(JSON.stringify(inv, null, 2), `${inv.number || 'invoice'}.json`, 'application/json');
 
   /* ── setters ── */
   const set = (path, val) =>
@@ -277,20 +460,52 @@ export default function InvoiceGenerator() {
           <button
             onClick={handleSave}
             className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl border transition-colors ${
-              saved
+              synced
                 ? 'bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-700 dark:text-emerald-400'
+                : saved
+                ? 'bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-400'
                 : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
             }`}
           >
-            <Save size={13} /> {saved ? 'Saved!' : 'Save #'}
+            {synced ? <><RefreshCw size={13} /> Synced to Payments!</> : saved ? <><Save size={13} /> Saved!</> : <><Save size={13} /> Save #</>}
           </button>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-lg transition-all hover:opacity-90 active:scale-95"
-            style={{ background: inv.accent }}
-          >
-            <Printer size={15} /> Print / Save PDF
-          </button>
+          {/* ── Export dropdown ── */}
+          <div className="relative" ref={exportRef}>
+            <button
+              onClick={() => setShowExport(s => !s)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-lg transition-all hover:opacity-90 active:scale-95"
+              style={{ background: inv.accent }}
+            >
+              <Download size={15} />
+              Export
+              <ChevronDown size={13} style={{ transition: 'transform .2s', transform: showExport ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+            </button>
+            {showExport && (
+              <div className="absolute right-0 top-full mt-2 w-60 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden z-50">
+                <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700/60">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Export Options</p>
+                </div>
+                {[
+                  { icon: <Printer size={14}/>,  label: 'Print',           sub: 'Send to printer',             fn: () => window.print() },
+                  { icon: <FileDown size={14}/>, label: 'Save as PDF',     sub: 'Opens clean print → PDF dialog', fn: handleSavePDF },
+                  { icon: <Code2 size={14}/>,    label: 'Download HTML',   sub: 'Standalone file  (.html)',     fn: handleDownloadHTML },
+                  { icon: <FileJson size={14}/>, label: 'Download JSON',   sub: 'Invoice data backup (.json)',  fn: handleDownloadJSON },
+                ].map(opt => (
+                  <button
+                    key={opt.label}
+                    onClick={() => { opt.fn(); setShowExport(false); }}
+                    className="flex items-center gap-3 w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors text-left border-b border-slate-100 dark:border-slate-700/40 last:border-0"
+                  >
+                    <span className="text-slate-400 dark:text-slate-500 flex-shrink-0">{opt.icon}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-tight">{opt.label}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">{opt.sub}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

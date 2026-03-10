@@ -210,15 +210,47 @@ export default function Payments() {
             </button>
           </div>
         </div>
-        <div className="overflow-x-auto">
+        {/* ── Mobile card view (xs → sm) ── */}
+        <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-700/50">
+          {filtered.map(p => (
+            <div key={p.id} className="px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="min-w-0">
+                  <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{p.id}</span>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white mt-0.5 truncate">{p.client}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{p.service}</p>
+                </div>
+                <button
+                  onClick={() => deletePayment(p.id)}
+                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-base font-bold text-slate-800 dark:text-white">₹{p.amount.toLocaleString()}</span>
+                <div className="flex items-center gap-2">
+                  {p.due && <span className="text-[11px] text-slate-400">Due {p.due}</span>}
+                  <StatusDropdown paymentId={p.id} current={p.status} onUpdate={updatePayment} />
+                </div>
+              </div>
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <div className="text-center py-10 text-slate-400 text-sm">No invoices found.</div>
+          )}
+        </div>
+
+        {/* ── Desktop table (md+) ── */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-slate-400 uppercase border-b border-slate-100 dark:border-slate-700">
                 <th className="text-left px-5 py-3 font-medium">Invoice</th>
                 <th className="text-left px-5 py-3 font-medium">Client</th>
-                <th className="text-left px-5 py-3 font-medium hidden sm:table-cell">Service</th>
+                <th className="text-left px-5 py-3 font-medium">Service</th>
                 <th className="text-left px-5 py-3 font-medium">Amount</th>
-                <th className="text-left px-5 py-3 font-medium hidden md:table-cell">Due Date</th>
+                <th className="text-left px-5 py-3 font-medium">Due Date</th>
                 <th className="text-left px-5 py-3 font-medium">Status</th>
                 <th className="text-right px-5 py-3 font-medium">Actions</th>
               </tr>
@@ -227,10 +259,10 @@ export default function Payments() {
               {filtered.map(p => (
                 <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                   <td className="px-5 py-3.5 font-mono text-xs text-blue-600 dark:text-blue-400 font-semibold">{p.id}</td>
-                  <td className="px-5 py-3.5 text-slate-700 dark:text-slate-200 font-medium text-xs sm:text-sm">{p.client}</td>
-                  <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400 text-xs hidden sm:table-cell">{p.service}</td>
-                  <td className="px-5 py-3.5 font-semibold text-slate-800 dark:text-white text-sm">₹{p.amount.toLocaleString()}</td>
-                  <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400 text-xs hidden md:table-cell">{p.due}</td>
+                  <td className="px-5 py-3.5 text-slate-700 dark:text-slate-200 font-medium">{p.client}</td>
+                  <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400 text-xs">{p.service}</td>
+                  <td className="px-5 py-3.5 font-semibold text-slate-800 dark:text-white">₹{p.amount.toLocaleString()}</td>
+                  <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400 text-xs">{p.due}</td>
                   <td className="px-5 py-3.5">
                     <StatusDropdown paymentId={p.id} current={p.status} onUpdate={updatePayment} />
                   </td>
