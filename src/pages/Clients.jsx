@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Plus, Search, Edit3, Trash2, Eye, X, Mail, Phone, Building2 } from 'lucide-react';
+import { Plus, Search, Edit3, Trash2, Eye, X, Mail, Phone, Building2, ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
 
 const serviceOptions = ['Web Development', 'Frontend Development', 'E-Poster Design', 'n8n Automation'];
@@ -18,6 +18,52 @@ const paymentColors = {
   Delayed: 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400',
   'Yet to Pay': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400',
 };
+
+const PAYMENT_STATUSES = ['Paid', 'Delayed', 'Yet to Pay'];
+
+function ClientPaymentDropdown({ clientId, current, onUpdate }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={clsx(
+          'flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium transition-all hover:opacity-80',
+          paymentColors[current] ?? 'bg-slate-100 text-slate-600'
+        )}
+      >
+        {current || 'Set status'}
+        <ChevronDown size={10} className={clsx('transition-transform', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1.5 w-32 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-30 py-1 overflow-hidden">
+          {PAYMENT_STATUSES.map(s => (
+            <button
+              key={s}
+              onClick={() => { onUpdate(clientId, s); setOpen(false); }}
+              className={clsx(
+                'w-full text-left text-xs px-3 py-2 transition-colors',
+                s === current
+                  ? 'font-semibold bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+              )}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Modal({ client, onClose, onSave }) {
   const [form, setForm] = useState(client || { name: '', company: '', email: '', phone: '', service: 'Web Development', projectStatus: 'Active', paymentStatus: 'Yet to Pay', notes: '' });
@@ -68,7 +114,7 @@ function Modal({ client, onClose, onSave }) {
 }
 
 export default function Clients() {
-  const { clients, addClient, updateClient, deleteClient, isAdmin } = useApp();
+  const { clients, addClient, updateClient, deleteClient, isAdmin, updateClientPaymentStatus } = useApp();
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(null); // null | 'add' | client object
 
@@ -98,7 +144,7 @@ export default function Clients() {
           { label: 'Total', value: clients.length, color: 'text-blue-500' },
           { label: 'Active Projects', value: clients.filter(c => c.projectStatus === 'Active' || c.projectStatus === 'Development').length, color: 'text-purple-500' },
           { label: 'Paid', value: clients.filter(c => c.paymentStatus === 'Paid').length, color: 'text-emerald-500' },
-          { label: 'Pending Payment', value: clients.filter(c => c.paymentStatus === 'Pending').length, color: 'text-red-500' },
+          { label: 'Delayed / Yet to Pay', value: clients.filter(c => c.paymentStatus === 'Delayed' || c.paymentStatus === 'Yet to Pay').length, color: 'text-red-500' },
         ].map(s => (
           <div key={s.label} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -146,7 +192,10 @@ export default function Clients() {
                     <span className={clsx('text-xs px-2 py-1 rounded-full font-medium', statusColors[client.projectStatus] ?? statusColors.Active)}>{client.projectStatus}</span>
                   </td>
                   <td className="px-5 py-4">
-                    <span className={clsx('text-xs px-2 py-1 rounded-full font-medium', paymentColors[client.paymentStatus])}>{client.paymentStatus}</span>
+                    {isAdmin
+                      ? <ClientPaymentDropdown clientId={client.id} current={client.paymentStatus} onUpdate={updateClientPaymentStatus} />
+                      : <span className={clsx('text-xs px-2 py-1 rounded-full font-medium', paymentColors[client.paymentStatus] ?? 'bg-slate-100 text-slate-600')}>{client.paymentStatus}</span>
+                    }
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-1">

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import {
   clients as initialClients,
   projects as initialProjects,
@@ -9,15 +9,17 @@ import {
 
 const AppContext = createContext(null);
 
+const load = (key, fallback) => { try { const v = localStorage.getItem(key); return v !== null ? JSON.parse(v) : fallback; } catch { return fallback; } };
+
 export function AppProvider({ children }) {
-  const [clients, setClients] = useState(initialClients);
-  const [projects, setProjects] = useState(initialProjects);
-  const [workflows, setWorkflows] = useState(initialWorkflows);
-  const [payments, setPayments] = useState(initialPayments);
-  const [files, setFiles] = useState(initialFiles);
-  const [darkMode, setDarkMode] = useState(true);
+  const [clients, setClients] = useState(() => load('tn_clients', initialClients));
+  const [projects, setProjects] = useState(() => load('tn_projects', initialProjects));
+  const [workflows, setWorkflows] = useState(() => load('tn_workflows', initialWorkflows));
+  const [payments, setPayments] = useState(() => load('tn_payments', initialPayments));
+  const [files, setFiles] = useState(() => load('tn_files', initialFiles));
+  const [darkMode, setDarkMode] = useState(() => load('tn_darkMode', true));
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState({ name: 'Vicky', role: 'admin' });
+  const [currentUser, setCurrentUser] = useState(() => load('tn_currentUser', { name: 'Vicky', role: 'admin' }));
   const isAdmin = currentUser.role === 'admin';
   const [notifications, setNotifications] = useState([]);
   const [syncLog, setSyncLog] = useState([]);
@@ -28,6 +30,15 @@ export function AppProvider({ children }) {
   };
 
   if (darkMode) document.documentElement.classList.add('dark');
+
+  // ── PERSISTENCE ────────────────────────────────────────────────────────────────
+  useEffect(() => { localStorage.setItem('tn_clients', JSON.stringify(clients)); }, [clients]);
+  useEffect(() => { localStorage.setItem('tn_projects', JSON.stringify(projects)); }, [projects]);
+  useEffect(() => { localStorage.setItem('tn_workflows', JSON.stringify(workflows)); }, [workflows]);
+  useEffect(() => { localStorage.setItem('tn_payments', JSON.stringify(payments)); }, [payments]);
+  useEffect(() => { localStorage.setItem('tn_files', JSON.stringify(files)); }, [files]);
+  useEffect(() => { localStorage.setItem('tn_darkMode', JSON.stringify(darkMode)); }, [darkMode]);
+  useEffect(() => { localStorage.setItem('tn_currentUser', JSON.stringify(currentUser)); }, [currentUser]);
 
   // ── SYNC LOG (shown on Dashboard) ────────────────────────────────────────────
   const pushLog = useCallback((message, type = 'info') => {
@@ -141,6 +152,9 @@ export function AppProvider({ children }) {
   // ── PAYMENTS ─────────────────────────────────────────────────────────────────
   const addPayment = useCallback((payment) => {
     setPayments(prev => [...prev, payment]);
+    if (payment.client) {
+      setClients(prev => prev.map(c => c.name === payment.client ? { ...c, paymentStatus: payment.status } : c));
+    }
     pushLog(`Invoice ${payment.id} added for ${payment.client}`, 'success');
   }, [pushLog]);
 
@@ -159,6 +173,20 @@ export function AppProvider({ children }) {
     const payment = currentPayments.find(p => p.id === id);
     if (payment) pushLog(`⚠ Invoice ${id} for "${payment.client}" deleted`, 'warning');
     setPayments(prev => prev.filter(p => p.id !== id));
+  }, [pushLog]);
+
+  const updateClientPaymentStatus = useCallback((clientId, newStatus, currentClients, currentPayments) => {
+    const client = currentClients.find(c => c.id === clientId);
+    if (!client) return;
+    setClients(prev => prev.map(c => c.id === clientId ? { ...c, paymentStatus: newStatus } : c));
+    const sorted = [...currentPayments.filter(p => p.client === client.name)]
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (sorted.length > 0) {
+      setPayments(prev => prev.map(p => p.id === sorted[0].id ? { ...p, status: newStatus } : p));
+      pushLog(`${client.name}'s payment → "${newStatus}" · Invoice ${sorted[0].id} synced`, 'sync');
+    } else {
+      pushLog(`${client.name}'s payment → "${newStatus}"`, 'info');
+    }
   }, [pushLog]);
 
   // ── SERVICE BREAKDOWN (live from payments) ────────────────────────────────────
@@ -220,6 +248,7 @@ export function AppProvider({ children }) {
       addPayment,
       updatePayment: (id, data) => updatePayment(id, data, payments),
       deletePayment: (id) => deletePayment(id, payments),
+      updateClientPaymentStatus: (clientId, status) => updateClientPaymentStatus(clientId, status, clients, payments),
 
       files, setFiles,
       darkMode, toggleDark,
