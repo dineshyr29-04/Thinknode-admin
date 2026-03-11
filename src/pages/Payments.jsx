@@ -34,25 +34,45 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 function StatusDropdown({ paymentId, current, onUpdate }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef(null);
+  const panelRef = useRef(null);
 
   useEffect(() => {
-    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = e => {
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        panelRef.current && !panelRef.current.contains(e.target)
+      ) setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const handleToggle = () => {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+    }
+    setOpen(o => !o);
+  };
+
   return (
-    <div ref={ref} className="relative inline-block">
+    <div className="relative inline-block">
       <button
-        onClick={() => setOpen(o => !o)}
+        ref={btnRef}
+        onClick={handleToggle}
         className={clsx('flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium transition-all hover:opacity-80', statusBadge[current])}
       >
         {current}
         <ChevronDown size={10} className={clsx('transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-36 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 py-1 overflow-hidden">
+        <div
+          ref={panelRef}
+          style={{ position: 'fixed', top: `${pos.top}px`, right: `${pos.right}px`, zIndex: 9999 }}
+          className="w-36 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 py-1 overflow-hidden"
+        >
           <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 px-3 pt-2 pb-1">Select status</p>
           {STATUSES.map(s => {
             const st = statusItemStyles[s];
@@ -80,25 +100,45 @@ function StatusDropdown({ paymentId, current, onUpdate }) {
 
 function ClientStatusDropdown({ clientId, current, onUpdate }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef(null);
+  const panelRef = useRef(null);
 
   useEffect(() => {
-    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = e => {
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        panelRef.current && !panelRef.current.contains(e.target)
+      ) setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const handleToggle = () => {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+    }
+    setOpen(o => !o);
+  };
+
   return (
-    <div ref={ref} className="relative inline-block">
+    <div className="relative inline-block">
       <button
-        onClick={() => setOpen(o => !o)}
+        ref={btnRef}
+        onClick={handleToggle}
         className={clsx('flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium transition-all hover:opacity-80', statusBadge[current])}
       >
         {current}
         <ChevronDown size={10} className={clsx('transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-36 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 py-1 overflow-hidden">
+        <div
+          ref={panelRef}
+          style={{ position: 'fixed', top: `${pos.top}px`, right: `${pos.right}px`, zIndex: 9999 }}
+          className="w-36 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 py-1 overflow-hidden"
+        >
           <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 px-3 pt-2 pb-1">Client status</p>
           {STATUSES.map(s => {
             const st = statusItemStyles[s];

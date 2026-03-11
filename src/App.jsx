@@ -17,7 +17,7 @@ import clsx from 'clsx';
 function Layout() {
   useApp();
   return (
-    <div className="flex min-h-dvh w-full bg-violet-50 dark:bg-[#0f1117] overflow-x-hidden">
+    <div className="flex h-dvh w-full bg-violet-50 dark:bg-[#0f1117] overflow-x-hidden">
       <Sidebar />
       <div className={clsx('flex flex-col flex-1 min-w-0 transition-all duration-300')}>
         <Navbar />
