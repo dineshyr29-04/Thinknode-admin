@@ -7,12 +7,14 @@ import { useState } from 'react';
 import clsx from 'clsx';
 
 export default function Automations() {
-  const { workflows } = useApp();
+  const { workflows, isAdmin } = useApp();
   const [selectedWf, setSelectedWf] = useState(workflows[0]);
 
   const active = workflows.filter(w => w.status === 'Active').length;
   const totalExec = workflows.reduce((s, w) => s + w.executions, 0);
-  const avgSuccess = Math.round(workflows.reduce((s, w) => s + w.successRate, 0) / workflows.length);
+  const avgSuccess = workflows.length > 0
+    ? Math.round(workflows.reduce((s, w) => s + w.successRate, 0) / workflows.length)
+    : 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -62,12 +64,16 @@ export default function Automations() {
                     <p className="text-xs text-slate-400 mt-0.5">Trigger: {selectedWf.trigger} · Client: {selectedWf.client}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-slate-200 dark:border-slate-600 transition-colors">
-                      <RefreshCw size={14} />
-                    </button>
-                    <button className={clsx('p-2 rounded-lg border transition-colors text-white', selectedWf.status === 'Active' ? 'bg-yellow-500 border-yellow-500 hover:bg-yellow-600' : 'bg-emerald-500 border-emerald-500 hover:bg-emerald-600')}>
-                      {selectedWf.status === 'Active' ? <Pause size={14} /> : <Play size={14} />}
-                    </button>
+                    {isAdmin && (
+                      <>
+                        <button className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-slate-200 dark:border-slate-600 transition-colors">
+                          <RefreshCw size={14} />
+                        </button>
+                        <button className={clsx('p-2 rounded-lg border transition-colors text-white', selectedWf.status === 'Active' ? 'bg-yellow-500 border-yellow-500 hover:bg-yellow-600' : 'bg-emerald-500 border-emerald-500 hover:bg-emerald-600')}>
+                          {selectedWf.status === 'Active' ? <Pause size={14} /> : <Play size={14} />}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 

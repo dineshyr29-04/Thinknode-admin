@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { Bell, Sun, Moon, Search, X, Menu } from 'lucide-react';
+import { Bell, Sun, Moon, Search, X, Menu, Shield, Eye } from 'lucide-react';
 
 
 const pageTitles = {
@@ -17,13 +17,17 @@ const pageTitles = {
 };
 
 export default function Navbar() {
-  const { darkMode, toggleDark, notifications, setSidebarOpen } = useApp();
+  const { darkMode, toggleDark, notifications, setSidebarOpen, currentUser, setCurrentUser, isAdmin } = useApp();
   const location = useLocation();
   const [showNotif, setShowNotif] = useState(false);
   const [search, setSearch] = useState('');
 
   const title = pageTitles[location.pathname] ?? 'ThinkNode Dash';
   const unread = notifications.length;
+
+  const toggleRole = () => {
+    setCurrentUser(u => ({ ...u, role: u.role === 'admin' ? 'viewer' : 'admin' }));
+  };
 
   return (
     <header className="sticky top-0 z-30 h-16 flex items-center gap-4 px-4 sm:px-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700/50">
@@ -38,7 +42,7 @@ export default function Navbar() {
       {/* Page title */}
       <div className="flex-1">
         <h1 className="text-lg font-semibold text-slate-800 dark:text-white">{title}</h1>
-        <p className="text-xs text-slate-400">Good evening, Freelancer</p>
+        <p className="text-xs text-slate-400">Good evening, {currentUser.name}</p>
       </div>
 
       {/* Search */}
@@ -56,6 +60,20 @@ export default function Navbar() {
           </button>
         )}
       </div>
+
+      {/* Role toggle */}
+      <button
+        onClick={toggleRole}
+        title={isAdmin ? 'Switch to Viewer mode' : 'Switch to Admin mode'}
+        className={`hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all ${
+          isAdmin
+            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700/50 hover:bg-blue-100 dark:hover:bg-blue-900/40'
+            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+        }`}
+      >
+        {isAdmin ? <Shield size={13} /> : <Eye size={13} />}
+        {isAdmin ? 'Admin' : 'Viewer'}
+      </button>
 
       {/* Dark mode */}
       <button
@@ -99,6 +117,9 @@ export default function Navbar() {
                   </div>
                 </li>
               ))}
+              {notifications.length === 0 && (
+                <li className="px-4 py-6 text-center text-xs text-slate-400">No notifications</li>
+              )}
             </ul>
           </div>
         )}
@@ -113,3 +134,4 @@ export default function Navbar() {
     </header>
   );
 }
+

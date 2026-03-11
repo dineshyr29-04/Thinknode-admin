@@ -17,11 +17,9 @@ export function AppProvider({ children }) {
   const [files, setFiles] = useState(initialFiles);
   const [darkMode, setDarkMode] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: 'Invoice INV-002 is overdue', type: 'warning', time: '2h ago' },
-    { id: 2, text: 'Workflow "Form Submit → Slack" paused', type: 'error', time: '5h ago' },
-    { id: 3, text: 'New client Meena Pillai added', type: 'info', time: '1d ago' },
-  ]);
+  const [currentUser, setCurrentUser] = useState({ name: 'Vicky', role: 'admin' });
+  const isAdmin = currentUser.role === 'admin';
+  const [notifications, setNotifications] = useState([]);
   const [syncLog, setSyncLog] = useState([]);
 
   const toggleDark = () => {
@@ -197,6 +195,7 @@ export function AppProvider({ children }) {
       notifications, addNotification,
       syncLog, dismissLog, clearLog,
       stats,
+      currentUser, setCurrentUser, isAdmin,
     }}>
       {children}
     </AppContext.Provider>

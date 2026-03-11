@@ -85,7 +85,7 @@ function ProjectModal({ project, clients, onClose, onSave }) {
 }
 
 export default function Projects() {
-  const { projects, addProject, updateProject, deleteProject, clients } = useApp();
+  const { projects, addProject, updateProject, deleteProject, clients, isAdmin } = useApp();
   const [modal, setModal] = useState(null); // null | 'add' | project obj
 
   return (
@@ -103,12 +103,14 @@ export default function Projects() {
             );
           })}
         </div>
-        <button
-          onClick={() => setModal('add')}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-blue-600/20 flex-shrink-0"
-        >
-          <Plus size={15} /> Add Project
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setModal('add')}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-blue-600/20 flex-shrink-0"
+          >
+            <Plus size={15} /> Add Project
+          </button>
+        )}
       </div>
 
       {/* Kanban */}
@@ -120,7 +122,7 @@ export default function Projects() {
           </div>
           <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full font-medium">{projects.length} total</span>
         </div>
-        <KanbanBoard onEdit={p => setModal(p)} onDelete={id => deleteProject(id)} />
+        <KanbanBoard onEdit={isAdmin ? p => setModal(p) : null} onDelete={isAdmin ? id => deleteProject(id) : null} />
       </div>
 
       {modal && (

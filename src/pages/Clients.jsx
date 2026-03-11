@@ -68,7 +68,7 @@ function Modal({ client, onClose, onSave }) {
 }
 
 export default function Clients() {
-  const { clients, addClient, updateClient, deleteClient } = useApp();
+  const { clients, addClient, updateClient, deleteClient, isAdmin } = useApp();
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(null); // null | 'add' | client object
 
@@ -84,10 +84,12 @@ export default function Clients() {
           <Search size={16} className="text-slate-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-300 outline-none placeholder-slate-400" />
         </div>
-        <button onClick={() => setModal('add')} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-blue-600/20">
-          <Plus size={16} />
-          Add Client
-        </button>
+        {isAdmin && (
+          <button onClick={() => setModal('add')} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-blue-600/20">
+            <Plus size={16} />
+            Add Client
+          </button>
+        )}
       </div>
 
       {/* Stats row */}
@@ -148,12 +150,16 @@ export default function Clients() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => setModal(client)} className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
-                        <Edit3 size={14} />
-                      </button>
-                      <button onClick={() => deleteClient(client.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                        <Trash2 size={14} />
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button onClick={() => setModal(client)} className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
+                            <Edit3 size={14} />
+                          </button>
+                          <button onClick={() => deleteClient(client.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

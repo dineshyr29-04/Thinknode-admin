@@ -126,7 +126,7 @@ function AddPaymentModal({ clients, onClose, onSave }) {
 }
 
 export default function Payments() {
-  const { payments, updatePayment, deletePayment, addPayment, clients } = useApp();
+  const { payments, updatePayment, deletePayment, addPayment, clients, isAdmin } = useApp();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
   const [addModal, setAddModal] = useState(false);
@@ -202,12 +202,14 @@ export default function Payments() {
               placeholder="Search..."
               className="text-xs px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 outline-none placeholder-slate-400 border border-transparent focus:border-blue-500"
             />
-            <button
-              onClick={() => setAddModal(true)}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
-            >
-              <Plus size={12} /> Add
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setAddModal(true)}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+              >
+                <Plus size={12} /> Add
+              </button>
+            )}
           </div>
         </div>
         {/* ── Mobile card view (xs → sm) ── */}
@@ -220,18 +222,31 @@ export default function Payments() {
                   <p className="text-sm font-semibold text-slate-800 dark:text-white mt-0.5 truncate">{p.client}</p>
                   <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{p.service}</p>
                 </div>
-                <button
-                  onClick={() => deletePayment(p.id)}
-                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
-                >
-                  <Trash2 size={14} />
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => deletePayment(p.id)}
+                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-base font-bold text-slate-800 dark:text-white">₹{p.amount.toLocaleString()}</span>
                 <div className="flex items-center gap-2">
                   {p.due && <span className="text-[11px] text-slate-400">Due {p.due}</span>}
-                  <StatusDropdown paymentId={p.id} current={p.status} onUpdate={updatePayment} />
+                  {isAdmin
+                    ? <StatusDropdown paymentId={p.id} current={p.status} onUpdate={updatePayment} />
+                    : <span className={clsx('text-xs px-2.5 py-1 rounded-full font-medium', statusBadge[p.status])}>{p.status}</span>
+                  }
+                  {isAdmin && (
+                    <button
+                      onClick={() => deletePayment(p.id)}
+                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -264,15 +279,20 @@ export default function Payments() {
                   <td className="px-5 py-3.5 font-semibold text-slate-800 dark:text-white">₹{p.amount.toLocaleString()}</td>
                   <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400 text-xs">{p.due}</td>
                   <td className="px-5 py-3.5">
-                    <StatusDropdown paymentId={p.id} current={p.status} onUpdate={updatePayment} />
+                    {isAdmin
+                      ? <StatusDropdown paymentId={p.id} current={p.status} onUpdate={updatePayment} />
+                      : <span className={clsx('text-xs px-2.5 py-1 rounded-full font-medium', statusBadge[p.status])}>{p.status}</span>
+                    }
                   </td>
                   <td className="px-5 py-3.5 text-right">
-                    <button
-                      onClick={() => deletePayment(p.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => deletePayment(p.id)}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

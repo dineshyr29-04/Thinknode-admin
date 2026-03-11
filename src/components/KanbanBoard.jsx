@@ -67,7 +67,7 @@ function Column({ col, projects, onEdit, onDelete }) {
 }
 
 export default function KanbanBoard({ onEdit, onDelete }) {
-  const { projects, moveProject } = useApp();
+  const { projects, moveProject, isAdmin } = useApp();
   const [activeId, setActiveId] = useState(null);
 
   const sensors = useSensors(
@@ -81,7 +81,7 @@ export default function KanbanBoard({ onEdit, onDelete }) {
 
   const handleDragEnd = ({ active, over }) => {
     setActiveId(null);
-    if (!over) return;
+    if (!isAdmin || !over) return;
     const overCol = kanbanColumns.find(c => c === over.id);
     if (overCol && overCol !== projects.find(p => p.id === active.id)?.column) {
       moveProject(active.id, overCol);
