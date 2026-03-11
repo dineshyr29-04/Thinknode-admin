@@ -7,6 +7,12 @@ import clsx from 'clsx';
 
 const STATUSES = ['Paid', 'Delayed', 'Yet to Pay'];
 
+const statusItemStyles = {
+  'Paid':       { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400', hover: 'hover:bg-emerald-50 dark:hover:bg-emerald-900/20', active: 'bg-emerald-50 dark:bg-emerald-900/20' },
+  'Delayed':    { dot: 'bg-red-500',     text: 'text-red-600 dark:text-red-400',         hover: 'hover:bg-red-50 dark:hover:bg-red-900/20',         active: 'bg-red-50 dark:bg-red-900/20' },
+  'Yet to Pay': { dot: 'bg-yellow-400',  text: 'text-yellow-700 dark:text-yellow-400',   hover: 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20',   active: 'bg-yellow-50 dark:bg-yellow-900/20' },
+};
+
 const statusBadge = {
   'Paid': 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/50',
   'Delayed': 'bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-700/50',
@@ -45,21 +51,26 @@ function StatusDropdown({ paymentId, current, onUpdate }) {
         <ChevronDown size={10} className={clsx('transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-28 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-30 py-1 overflow-hidden">
-          {STATUSES.map(s => (
-            <button
-              key={s}
-              onClick={() => { onUpdate(paymentId, { status: s }); setOpen(false); }}
-              className={clsx(
-                'w-full text-left text-xs px-3 py-2 transition-colors',
-                s === current
-                  ? 'font-semibold bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
-              )}
-            >
-              {s}
-            </button>
-          ))}
+        <div className="absolute right-0 top-full mt-1.5 w-36 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 py-1 overflow-hidden">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 px-3 pt-2 pb-1">Select status</p>
+          {STATUSES.map(s => {
+            const st = statusItemStyles[s];
+            return (
+              <button
+                key={s}
+                onClick={() => { onUpdate(paymentId, { status: s }); setOpen(false); }}
+                className={clsx(
+                  'w-full text-left text-xs px-3 py-2 flex items-center gap-2 transition-colors',
+                  s === current
+                    ? clsx('font-semibold', st.active, st.text)
+                    : clsx('text-slate-500 dark:text-slate-400', st.hover)
+                )}
+              >
+                <span className={clsx('w-2 h-2 rounded-full flex-shrink-0', st.dot)} />
+                {s}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

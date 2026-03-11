@@ -169,42 +169,62 @@ export default function Dashboard() {
         {/* Recent Projects */}
         <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
           <h2 className="text-sm font-semibold text-slate-800 dark:text-white mb-4">Recent Projects</h2>
-          <ul className="space-y-3">
-            {recentProjects.map(p => (
-              <li key={p.id} className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${p.color}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">{p.name}</p>
-                  <p className="text-xs text-slate-400">{p.client}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{p.progress}%</p>
-                  <div className="w-12 h-1 bg-slate-100 dark:bg-slate-700 rounded-full mt-1 overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${p.progress}%` }} />
+          {recentProjects.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[130px] gap-2">
+              <FolderKanban size={28} className="text-slate-300 dark:text-slate-600" />
+              <p className="text-xs text-slate-400 dark:text-slate-500 text-center leading-5">
+                No projects yet<br />
+                Add a project to see it here
+              </p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {recentProjects.map(p => (
+                <li key={p.id} className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${p.color}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">{p.name}</p>
+                    <p className="text-xs text-slate-400">{p.client}</p>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                  <div className="text-right">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{p.progress}%</p>
+                    <div className="w-12 h-1 bg-slate-100 dark:bg-slate-700 rounded-full mt-1 overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${p.progress}%` }} />
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Workflow Status */}
         <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
           <h2 className="text-sm font-semibold text-slate-800 dark:text-white mb-4">Automation Status</h2>
-          <div className="space-y-3">
-            {workflows.map(w => (
-              <div key={w.id} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
-                <div>
-                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{w.name}</p>
-                  <p className="text-xs text-slate-400">{w.trigger}</p>
+          {workflows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[130px] gap-2">
+              <Zap size={28} className="text-slate-300 dark:text-slate-600" />
+              <p className="text-xs text-slate-400 dark:text-slate-500 text-center leading-5">
+                No automations yet<br />
+                Create a workflow to see status here
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {workflows.map(w => (
+                <div key={w.id} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                  <div>
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{w.name}</p>
+                    <p className="text-xs text-slate-400">{w.trigger}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    w.status === 'Active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
+                      : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
+                  }`}>{w.status}</span>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  w.status === 'Active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                    : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
-                }`}>{w.status}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
