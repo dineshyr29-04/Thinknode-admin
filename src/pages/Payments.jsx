@@ -98,7 +98,7 @@ function StatusDropdown({ paymentId, current, onUpdate }) {
   );
 }
 
-function ClientStatusDropdown({ clientId, current, onUpdate }) {
+function ClientStatusDropdown({ clientId, current, onUpdate, onSelectPaid }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
   const btnRef = useRef(null);
