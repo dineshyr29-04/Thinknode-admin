@@ -2,15 +2,15 @@ import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp, Clock, CheckCircle, Plus, X, ChevronDown, Trash2 } from 'lucide-react';
-import { revenueData } from '../data/dummyData';
+
 import clsx from 'clsx';
 
-const STATUSES = ['Paid', 'Pending', 'Partial'];
+const STATUSES = ['Paid', 'Delayed', 'Yet to Pay'];
 
 const statusBadge = {
   'Paid': 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/50',
-  'Pending': 'bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-700/50',
-  'Partial': 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-700/50',
+  'Delayed': 'bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-700/50',
+  'Yet to Pay': 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-700/50',
 };
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -67,7 +67,7 @@ function StatusDropdown({ paymentId, current, onUpdate }) {
 }
 
 function AddPaymentModal({ clients, onClose, onSave }) {
-  const [form, setForm] = useState({ id: '', client: '', service: 'Web Development', amount: '', status: 'Pending', date: new Date().toISOString().split('T')[0], due: '' });
+  const [form, setForm] = useState({ id: '', client: '', service: 'Web Development', amount: '', status: 'Yet to Pay', date: new Date().toISOString().split('T')[0], due: '' });
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   return (
@@ -126,7 +126,7 @@ function AddPaymentModal({ clients, onClose, onSave }) {
 }
 
 export default function Payments() {
-  const { payments, updatePayment, deletePayment, addPayment, clients, isAdmin } = useApp();
+  const { payments, updatePayment, deletePayment, addPayment, clients, isAdmin, revenueData } = useApp();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
   const [addModal, setAddModal] = useState(false);
@@ -139,8 +139,8 @@ export default function Payments() {
 
   const totalInvoiced = payments.reduce((s, p) => s + p.amount, 0);
   const totalPaid = payments.filter(p => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
-  const totalPending = payments.filter(p => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
-  const totalPartial = payments.filter(p => p.status === 'Partial').reduce((s, p) => s + p.amount, 0);
+  const totalDelayed = payments.filter(p => p.status === 'Delayed').reduce((s, p) => s + p.amount, 0);
+  const totalYetToPay = payments.filter(p => p.status === 'Yet to Pay').reduce((s, p) => s + p.amount, 0);
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -149,8 +149,8 @@ export default function Payments() {
         {[
           { label: 'Total Invoiced', value: totalInvoiced, icon: <DollarSign size={18} />, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
           { label: 'Total Paid', value: totalPaid, icon: <CheckCircle size={18} />, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-          { label: 'Pending', value: totalPending, icon: <Clock size={18} />, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' },
-          { label: 'Partial', value: totalPartial, icon: <TrendingUp size={18} />, color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
+          { label: 'Delayed', value: totalDelayed, icon: <Clock size={18} />, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' },
+          { label: 'Yet to Pay', value: totalYetToPay, icon: <TrendingUp size={18} />, color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
         ].map(s => (
           <div key={s.label} className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
             <div className={clsx('w-9 h-9 rounded-lg flex items-center justify-center mb-3', s.bg)}>
@@ -187,7 +187,7 @@ export default function Payments() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-700">
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Invoices</h3>
           <div className="flex gap-2 flex-wrap items-center">
-            {['All', 'Paid', 'Pending', 'Partial'].map(s => (
+            {['All', 'Paid', 'Delayed', 'Yet to Pay'].map(s => (
               <button
                 key={s}
                 onClick={() => setFilter(s)}
@@ -239,14 +239,6 @@ export default function Payments() {
                     ? <StatusDropdown paymentId={p.id} current={p.status} onUpdate={updatePayment} />
                     : <span className={clsx('text-xs px-2.5 py-1 rounded-full font-medium', statusBadge[p.status])}>{p.status}</span>
                   }
-                  {isAdmin && (
-                    <button
-                      onClick={() => deletePayment(p.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
                 </div>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import {
   clients as initialClients,
   projects as initialProjects,
@@ -161,6 +161,38 @@ export function AppProvider({ children }) {
     setPayments(prev => prev.filter(p => p.id !== id));
   }, [pushLog]);
 
+  // ── SERVICE BREAKDOWN (live from payments) ────────────────────────────────────
+  const serviceBreakdown = useMemo(() => {
+    const colors = {
+      'Web Development': '#3b82f6',
+      'Frontend Development': '#8b5cf6',
+      'E-Poster Design': '#ec4899',
+      'n8n Automation': '#10b981',
+    };
+    const map = {};
+    payments.filter(p => p.status === 'Paid').forEach(p => {
+      if (!map[p.service]) map[p.service] = 0;
+      map[p.service] += p.amount;
+    });
+    return Object.entries(map).map(([name, value]) => ({ name, value, color: colors[name] ?? '#64748b' }));
+  }, [payments]);
+
+  // ── REVENUE TREND (live from payments) ───────────────────────────────────────
+  const revenueData = useMemo(() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const map = {};
+    payments.filter(p => p.status === 'Paid' && p.date).forEach(p => {
+      const key = monthNames[parseInt(p.date.split('-')[1], 10) - 1];
+      map[key] = (map[key] ?? 0) + p.amount;
+    });
+    const now = new Date();
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+      const key = monthNames[d.getMonth()];
+      return { month: key, revenue: map[key] ?? 0 };
+    });
+  }, [payments]);
+
   // ── STATS ─────────────────────────────────────────────────────────────────────
   const stats = {
     totalClients: clients.length,
@@ -195,6 +227,8 @@ export function AppProvider({ children }) {
       notifications, addNotification,
       syncLog, dismissLog, clearLog,
       stats,
+      serviceBreakdown,
+      revenueData,
       currentUser, setCurrentUser, isAdmin,
     }}>
       {children}

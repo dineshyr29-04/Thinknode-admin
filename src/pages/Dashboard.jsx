@@ -9,7 +9,7 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { revenueData, serviceBreakdown, activityData } from '../data/dummyData';
+import { activityData } from '../data/dummyData';
 import clsx from 'clsx';
 
 const logIcons = {
@@ -42,7 +42,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Dashboard() {
-  const { stats, workflows, projects, clients, syncLog, dismissLog, clearLog } = useApp();
+  const { stats, workflows, projects, clients, syncLog, dismissLog, clearLog, serviceBreakdown, revenueData } = useApp();
 
   const statsCards = [
     { title: 'Total Clients', value: stats.totalClients, icon: Users, color: 'blue', trend: 12, subtitle: 'All time' },
@@ -113,22 +113,39 @@ export default function Dashboard() {
         <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
           <h2 className="text-sm font-semibold text-slate-800 dark:text-white mb-1">Service Revenue</h2>
           <p className="text-xs text-slate-400 mb-4">Breakdown by service type</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <PieChart>
-              <Pie data={serviceBreakdown} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" paddingAngle={3}>
-                {serviceBreakdown.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-              </Pie>
-              <Tooltip formatter={v => `₹${(v / 1000).toFixed(0)}K`} contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '8px', fontSize: '12px' }} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {serviceBreakdown.map(s => (
-              <div key={s.name} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
-                <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{s.name}</span>
+          {serviceBreakdown.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[160px] gap-2">
+              <div className="relative w-[110px] h-[110px]">
+                <div className="w-full h-full rounded-full border-[10px] border-dashed border-slate-200 dark:border-slate-700" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <IndianRupee size={22} className="text-slate-300 dark:text-slate-600" />
+                </div>
               </div>
-            ))}
-          </div>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center leading-5">
+                No paid invoices yet<br />
+                Chart updates when income is added
+              </p>
+            </div>
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie data={serviceBreakdown} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" paddingAngle={3}>
+                    {serviceBreakdown.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                  </Pie>
+                  <Tooltip formatter={v => `₹${(v / 1000).toFixed(0)}K`} contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '8px', fontSize: '12px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {serviceBreakdown.map(s => (
+                  <div key={s.name} className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                    <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{s.name}: ₹{(s.value / 1000).toFixed(0)}K</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
