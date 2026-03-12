@@ -3,6 +3,10 @@ import {
   clients as initialClients,
   projects as initialProjects,
   workflows as initialWorkflows,
+  webProjects as initialWebProjects,
+  frontendApps as initialFrontendApps,
+  posterProjects as initialPosterProjects,
+  videoProjects as initialVideoProjects,
   payments as initialPayments,
   files as initialFiles,
 } from '../data/dummyData';
@@ -15,6 +19,10 @@ export function AppProvider({ children }) {
   const [clients, setClients] = useState(() => load('tn_clients', initialClients));
   const [projects, setProjects] = useState(() => load('tn_projects', initialProjects));
   const [workflows, setWorkflows] = useState(() => load('tn_workflows', initialWorkflows));
+  const [webProjects, setWebProjects] = useState(() => load('tn_webProjects', initialWebProjects));
+  const [frontendApps, setFrontendApps] = useState(() => load('tn_frontendApps', initialFrontendApps));
+  const [posterProjects, setPosterProjects] = useState(() => load('tn_posterProjects', initialPosterProjects));
+  const [videoProjects, setVideoProjects] = useState(() => load('tn_videoProjects', initialVideoProjects));
   const [payments, setPayments] = useState(() => load('tn_payments', initialPayments));
   const [files, setFiles] = useState(() => load('tn_files', initialFiles));
   const [darkMode, setDarkMode] = useState(() => load('tn_darkMode', true));
@@ -35,6 +43,10 @@ export function AppProvider({ children }) {
   useEffect(() => { localStorage.setItem('tn_clients', JSON.stringify(clients)); }, [clients]);
   useEffect(() => { localStorage.setItem('tn_projects', JSON.stringify(projects)); }, [projects]);
   useEffect(() => { localStorage.setItem('tn_workflows', JSON.stringify(workflows)); }, [workflows]);
+  useEffect(() => { localStorage.setItem('tn_webProjects', JSON.stringify(webProjects)); }, [webProjects]);
+  useEffect(() => { localStorage.setItem('tn_frontendApps', JSON.stringify(frontendApps)); }, [frontendApps]);
+  useEffect(() => { localStorage.setItem('tn_posterProjects', JSON.stringify(posterProjects)); }, [posterProjects]);
+  useEffect(() => { localStorage.setItem('tn_videoProjects', JSON.stringify(videoProjects)); }, [videoProjects]);
   useEffect(() => { localStorage.setItem('tn_payments', JSON.stringify(payments)); }, [payments]);
   useEffect(() => { localStorage.setItem('tn_files', JSON.stringify(files)); }, [files]);
   useEffect(() => { localStorage.setItem('tn_darkMode', JSON.stringify(darkMode)); }, [darkMode]);
@@ -69,6 +81,41 @@ export function AppProvider({ children }) {
       projects: [],
     };
     setClients(prev => [...prev, newClient]);
+
+    // Create a starter project for this client and add it to projects
+    const projectId = Date.now() + 1;
+    const projectName = `${client.name} · ${client.service || 'Project'}`;
+    const newProject = {
+      id: projectId,
+      name: projectName,
+      client: client.name,
+      clientId: newClient.id,
+      service: client.service || 'Web Development',
+      column: 'Lead',
+      progress: 0,
+      deadline: '',
+      priority: 'Medium',
+      notes: '',
+      color: 'bg-blue-500',
+    };
+    setProjects(prev => [...prev, newProject]);
+    // Attach project id to client record
+    setClients(prev => prev.map(c => c.id === newClient.id ? { ...c, projects: [...(c.projects || []), projectId] } : c));
+
+    // Also add a small entry to the appropriate services list so Services page shows it
+    const svc = client.service;
+    if (svc === 'Web Development') {
+      setWebProjects(prev => [...prev, { id: projectId, name: projectName, client: client.name, status: 'In Progress', domain: '', hosting: '' }]);
+    } else if (svc === 'Frontend Development') {
+      setFrontendApps(prev => [...prev, { id: projectId, name: projectName, client: client.name, uiStatus: 'In Progress', framework: 'React', deployLink: '' }]);
+    } else if (svc === 'E-Poster Design') {
+      setPosterProjects(prev => [...prev, { id: projectId, name: projectName, client: client.name, preview: '', versions: 1, files: [], approvalStatus: 'Pending' }]);
+    } else if (svc === 'Video Editing') {
+      setVideoProjects(prev => [...prev, { id: projectId, name: projectName, client: client.name, status: 'In Progress', format: 'MP4', duration: '' }]);
+    } else if (svc === 'n8n Automation') {
+      setWorkflows(prev => [...prev, { id: projectId, name: `${client.name} · Automation`, trigger: 'Webhook', client: client.name, status: 'Active', successRate: 100, logs: [] }]);
+    }
+
     pushLog(`Client "${client.name}" added`, 'success');
   }, [pushLog]);
 
@@ -284,6 +331,10 @@ export function AppProvider({ children }) {
       deleteProject: (id) => deleteProject(id, projects),
 
       workflows, setWorkflows,
+      webProjects, setWebProjects,
+      frontendApps, setFrontendApps,
+      posterProjects, setPosterProjects,
+      videoProjects, setVideoProjects,
       payments,
       addPayment,
       updatePayment: (id, data) => updatePayment(id, data, payments),

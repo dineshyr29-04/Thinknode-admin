@@ -1,6 +1,6 @@
 import { Globe, AppWindow, Image, Zap, ExternalLink, CheckCircle, Clock, AlertCircle, Download, Clapperboard } from 'lucide-react';
-import { webProjects, frontendApps, posterProjects, videoProjects, workflows } from '../data/dummyData';
 import clsx from 'clsx';
+import { useApp } from '../context/AppContext';
 
 const deployStatus = {
   'In Progress': { style: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400', icon: <Clock size={12} /> },
@@ -23,6 +23,8 @@ function SectionHeader({ icon: Icon, color, title, count }) {
 }
 
 export default function Services() {
+  const { webProjects, frontendApps, posterProjects, videoProjects, workflows } = useApp();
+
   return (
     <div className="p-6 space-y-8">
 
