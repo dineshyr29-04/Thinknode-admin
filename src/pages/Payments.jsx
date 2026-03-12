@@ -296,13 +296,14 @@ export default function Payments() {
   const [paidInvoiceTarget, setPaidInvoiceTarget] = useState(null);
 
   const handleClientPaidConfirm = ({ amount, method, detail }) => {
-    updateClientPaymentStatus(paidClientTarget, 'Paid');
+    updateClientPaymentStatus(paidClientTarget, 'Paid', { paidAmount: amount, paymentMode: method, paymentDetail: detail });
     updateClient(paidClientTarget, { paymentMode: method, paymentDetail: detail, paidAmount: amount });
     setPaidClientTarget(null);
   };
 
   const handleInvoicePaidConfirm = ({ amount, method, detail }) => {
-    updatePayment(paidInvoiceTarget, { status: 'Paid', paymentMode: method, paymentDetail: detail, paidAmount: amount });
+    const today = new Date().toISOString().split('T')[0];
+    updatePayment(paidInvoiceTarget, { status: 'Paid', paymentMode: method, paymentDetail: detail, paidAmount: amount, paidDate: today });
     setPaidInvoiceTarget(null);
   };
 
@@ -319,7 +320,7 @@ export default function Payments() {
   });
 
   const totalInvoiced = payments.reduce((s, p) => s + p.amount, 0);
-  const totalPaid = payments.filter(p => p.status === 'Paid').reduce((s, p) => s + p.amount, 0);
+  const totalPaid = payments.filter(p => p.status === 'Paid').reduce((s, p) => s + (p.paidAmount || p.amount), 0);
   const totalDelayed = payments.filter(p => p.status === 'Delayed').reduce((s, p) => s + p.amount, 0);
   const totalYetToPay = payments.filter(p => p.status === 'Yet to Pay').reduce((s, p) => s + p.amount, 0);
 

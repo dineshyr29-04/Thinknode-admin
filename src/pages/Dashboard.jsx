@@ -63,7 +63,7 @@ export default function Dashboard() {
     { title: 'Total Clients', value: stats.totalClients, icon: Users, color: 'blue', trend: 12, subtitle: 'All time' },
     { title: 'Active Projects', value: stats.activeProjects, icon: FolderKanban, color: 'purple', trend: 8, subtitle: 'In progress' },
     { title: 'Pending Tasks', value: stats.pendingTasks, icon: Clock, color: 'orange', trend: -3, subtitle: 'Lead + Planning' },
-    { title: 'Monthly Revenue', value: stats.monthlyRevenue, icon: IndianRupee, color: 'green', trend: 24, subtitle: 'This month' },
+    { title: 'Monthly Revenue', value: stats.monthlyRevenue, icon: IndianRupee, color: 'green', trend: 0, subtitle: 'This month (paid)' },
     { title: 'Active Automations', value: stats.activeAutomations, icon: Zap, color: 'pink', trend: 0, subtitle: 'Running workflows' },
   ];
 
@@ -105,7 +105,9 @@ export default function Dashboard() {
               <h2 className="text-sm font-semibold text-slate-800 dark:text-white">Revenue Overview</h2>
               <p className="text-xs text-slate-400">Last 6 months</p>
             </div>
-            <span className="text-xs text-emerald-500 font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg">↑ 24% this month</span>
+            <span className="text-xs text-emerald-500 font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg">
+              Total Earned: ₹{((stats.totalEarned ?? 0) / 1000).toFixed(0)}K
+            </span>
           </div>
           <div className="h-[220px] sm:h-[240px]">
             <ResponsiveContainer width="100%" height="100%">

@@ -175,15 +175,43 @@ export function AppProvider({ children }) {
     setPayments(prev => prev.filter(p => p.id !== id));
   }, [pushLog]);
 
-  const updateClientPaymentStatus = useCallback((clientId, newStatus, currentClients, currentPayments) => {
+  const updateClientPaymentStatus = useCallback((clientId, newStatus, paymentDetails, currentClients, currentPayments) => {
     const client = currentClients.find(c => c.id === clientId);
     if (!client) return;
     setClients(prev => prev.map(c => c.id === clientId ? { ...c, paymentStatus: newStatus } : c));
+    const today = new Date().toISOString().split('T')[0];
     const sorted = [...currentPayments.filter(p => p.client === client.name)]
       .sort((a, b) => new Date(b.date) - new Date(a.date));
     if (sorted.length > 0) {
-      setPayments(prev => prev.map(p => p.id === sorted[0].id ? { ...p, status: newStatus } : p));
+      // Update the most recent invoice for this client
+      setPayments(prev => prev.map(p => p.id === sorted[0].id ? {
+        ...p,
+        status: newStatus,
+        // Only store paidDate / paidAmount when actually marking as Paid
+        ...(newStatus === 'Paid' && { paidDate: today }),
+        ...(paymentDetails?.paidAmount != null && { paidAmount: paymentDetails.paidAmount }),
+        ...(paymentDetails?.paymentMode && { paymentMode: paymentDetails.paymentMode }),
+        ...(paymentDetails?.paymentDetail !== undefined && { paymentDetail: paymentDetails.paymentDetail }),
+      } : p));
       pushLog(`${client.name}'s payment → "${newStatus}" · Invoice ${sorted[0].id} synced`, 'sync');
+    } else if (newStatus === 'Paid' && paymentDetails?.paidAmount) {
+      // No invoice exists – create one so the money shows up in every graph
+      const autoId = `INV-${Date.now()}`;
+      const newPayment = {
+        id: autoId,
+        client: client.name,
+        service: client.service || 'General',
+        amount: paymentDetails.paidAmount,
+        paidAmount: paymentDetails.paidAmount,
+        status: 'Paid',
+        date: today,
+        paidDate: today,
+        due: today,
+        paymentMode: paymentDetails.paymentMode || '',
+        paymentDetail: paymentDetails.paymentDetail || '',
+      };
+      setPayments(prev => [...prev, newPayment]);
+      pushLog(`Payment ₹${paymentDetails.paidAmount.toLocaleString()} recorded for ${client.name} (auto-invoice ${autoId})`, 'success');
     } else {
       pushLog(`${client.name}'s payment → "${newStatus}"`, 'info');
     }
@@ -201,7 +229,7 @@ export function AppProvider({ children }) {
     const map = {};
     payments.filter(p => p.status === 'Paid').forEach(p => {
       if (!map[p.service]) map[p.service] = 0;
-      map[p.service] += p.amount;
+      map[p.service] += (p.paidAmount || p.amount);
     });
     return Object.entries(map).map(([name, value]) => ({ name, value, color: colors[name] ?? '#64748b' }));
   }, [payments]);
@@ -210,9 +238,12 @@ export function AppProvider({ children }) {
   const revenueData = useMemo(() => {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const map = {};
-    payments.filter(p => p.status === 'Paid' && p.date).forEach(p => {
-      const key = monthNames[parseInt(p.date.split('-')[1], 10) - 1];
-      map[key] = (map[key] ?? 0) + p.amount;
+    payments.filter(p => p.status === 'Paid').forEach(p => {
+      // Use paidDate (actual payment date) when available, else fall back to invoice date
+      const refDate = p.paidDate || p.date;
+      if (!refDate) return;
+      const key = monthNames[parseInt(refDate.split('-')[1], 10) - 1];
+      map[key] = (map[key] ?? 0) + (p.paidAmount || p.amount);
     });
     const now = new Date();
     return Array.from({ length: 6 }, (_, i) => {
@@ -223,11 +254,19 @@ export function AppProvider({ children }) {
   }, [payments]);
 
   // ── STATS ─────────────────────────────────────────────────────────────────────
+  const _now = new Date();
   const stats = {
     totalClients: clients.length,
     activeProjects: projects.filter(p => p.column !== 'Delivered').length,
     pendingTasks: projects.filter(p => ['Lead', 'Planning'].includes(p.column)).length,
-    monthlyRevenue: payments.filter(p => p.status === 'Paid').reduce((s, p) => s + p.amount, 0),
+    // monthlyRevenue: money actually received THIS calendar month (uses paidDate, not invoice date)
+    monthlyRevenue: payments
+      .filter(p => p.status === 'Paid' && (p.paidDate || p.date) &&
+        (() => { const d = new Date(p.paidDate || p.date); return d.getMonth() === _now.getMonth() && d.getFullYear() === _now.getFullYear(); })()
+      )
+      .reduce((s, p) => s + (p.paidAmount || p.amount), 0),
+    // totalEarned: all-time money received across every paid invoice
+    totalEarned: payments.filter(p => p.status === 'Paid').reduce((s, p) => s + (p.paidAmount || p.amount), 0),
     activeAutomations: workflows.filter(w => w.status === 'Active').length,
   };
 
@@ -249,7 +288,7 @@ export function AppProvider({ children }) {
       addPayment,
       updatePayment: (id, data) => updatePayment(id, data, payments),
       deletePayment: (id) => deletePayment(id, payments),
-      updateClientPaymentStatus: (clientId, status) => updateClientPaymentStatus(clientId, status, clients, payments),
+      updateClientPaymentStatus: (clientId, status, paymentDetails) => updateClientPaymentStatus(clientId, status, paymentDetails, clients, payments),
 
       files, setFiles,
       darkMode, toggleDark,
