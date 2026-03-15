@@ -123,12 +123,57 @@ export function AppProvider({ children }) {
     const old = currentClients.find(c => c.id === id);
     if (!old) return;
     const nameChanged = data.name && old.name !== data.name;
+    const serviceChanged = data.service && old.service !== data.service;
 
     if (nameChanged) {
       setProjects(prev => prev.map(p => p.clientId === id ? { ...p, client: data.name } : p));
       setPayments(prev => prev.map(p => p.client === old.name ? { ...p, client: data.name } : p));
-      pushLog(`Client renamed "${old.name}" → "${data.name}" · Projects & Invoices updated`, 'sync');
-    } else {
+      setWebProjects(prev => prev.map(p => p.client === old.name ? { ...p, client: data.name } : p));
+      setFrontendApps(prev => prev.map(p => p.client === old.name ? { ...p, client: data.name } : p));
+      setPosterProjects(prev => prev.map(p => p.client === old.name ? { ...p, client: data.name } : p));
+      setVideoProjects(prev => prev.map(p => p.client === old.name ? { ...p, client: data.name } : p));
+      setWorkflows(prev => prev.map(p => p.client === old.name ? { ...p, client: data.name } : p));
+      pushLog(`Client renamed "${old.name}" → "${data.name}" · All records updated`, 'sync');
+    }
+
+    if (serviceChanged) {
+      const oldSvc = old.service;
+      const newSvc = data.service;
+      const clientName = data.name || old.name; // Use new name if provided, otherwise old
+      
+      // Remove from old service category
+      if (oldSvc === 'Web Development') {
+        setWebProjects(prev => prev.filter(p => p.client !== clientName));
+      } else if (oldSvc === 'Frontend Development') {
+        setFrontendApps(prev => prev.filter(p => p.client !== clientName));
+      } else if (oldSvc === 'E-Poster Design') {
+        setPosterProjects(prev => prev.filter(p => p.client !== clientName));
+      } else if (oldSvc === 'Video Editing') {
+        setVideoProjects(prev => prev.filter(p => p.client !== clientName));
+      } else if (oldSvc === 'n8n Automation') {
+        setWorkflows(prev => prev.filter(p => p.client !== clientName));
+      }
+
+      // Add to new service category
+      const clientProjects = currentProjects.filter(p => p.clientId === id);
+      clientProjects.forEach(proj => {
+        if (newSvc === 'Web Development') {
+          setWebProjects(prev => [...prev, { id: proj.id, name: proj.name, client: clientName, status: 'In Progress', domain: '', hosting: '' }]);
+        } else if (newSvc === 'Frontend Development') {
+          setFrontendApps(prev => [...prev, { id: proj.id, name: proj.name, client: clientName, uiStatus: 'In Progress', framework: 'React', deployLink: '' }]);
+        } else if (newSvc === 'E-Poster Design') {
+          setPosterProjects(prev => [...prev, { id: proj.id, name: proj.name, client: clientName, preview: '', versions: 1, files: [], approvalStatus: 'Pending' }]);
+        } else if (newSvc === 'Video Editing') {
+          setVideoProjects(prev => [...prev, { id: proj.id, name: proj.name, client: clientName, status: 'In Progress', format: 'MP4', duration: '' }]);
+        } else if (newSvc === 'n8n Automation') {
+          setWorkflows(prev => [...prev, { id: proj.id, name: `${clientName} · Automation`, trigger: 'Webhook', client: clientName, status: 'Active', successRate: 100, logs: [] }]);
+        }
+      });
+
+      pushLog(`Client "${old.name}"'s service updated to "${newSvc}" · Services page synced`, 'sync');
+    }
+
+    if (!nameChanged && !serviceChanged) {
       pushLog(`Client "${old.name}" updated`, 'info');
     }
 
@@ -202,7 +247,7 @@ export function AppProvider({ children }) {
     if (payment.client) {
       setClients(prev => prev.map(c => c.name === payment.client ? { ...c, paymentStatus: payment.status } : c));
     }
-    pushLog(`Invoice ${payment.id} added for ${payment.client}`, 'success');
+    pushLog(`Invoice ${payment.id} added for ${payment.client} (${payment.service})`, 'success');
   }, [pushLog]);
 
   const updatePayment = useCallback((id, data, currentPayments) => {
@@ -211,24 +256,30 @@ export function AppProvider({ children }) {
 
     if (data.status && data.status !== old.status) {
       setClients(prev => prev.map(c => c.name === old.client ? { ...c, paymentStatus: data.status } : c));
-      pushLog(`Invoice ${id} → "${data.status}" · ${old.client}'s payment status synced`, 'sync');
+      pushLog(`Invoice ${id} → "${data.status}" · ${old.client}'s payment synced · Charts updating`, 'sync');
+    } else {
+      pushLog(`Invoice ${id} updated`, 'info');
     }
+    
     setPayments(prev => prev.map(p => p.id === id ? { ...p, ...data } : p));
   }, [pushLog]);
 
   const deletePayment = useCallback((id, currentPayments) => {
     const payment = currentPayments.find(p => p.id === id);
-    if (payment) pushLog(`⚠ Invoice ${id} for "${payment.client}" deleted`, 'warning');
+    if (payment) pushLog(`⚠ Invoice ${id} for "${payment.client}" deleted · Charts recalculated`, 'warning');
     setPayments(prev => prev.filter(p => p.id !== id));
   }, [pushLog]);
 
   const updateClientPaymentStatus = useCallback((clientId, newStatus, paymentDetails, currentClients, currentPayments) => {
     const client = currentClients.find(c => c.id === clientId);
     if (!client) return;
+    
     setClients(prev => prev.map(c => c.id === clientId ? { ...c, paymentStatus: newStatus } : c));
+    
     const today = new Date().toISOString().split('T')[0];
     const sorted = [...currentPayments.filter(p => p.client === client.name)]
       .sort((a, b) => new Date(b.date) - new Date(a.date));
+    
     if (sorted.length > 0) {
       // Update the most recent invoice for this client
       setPayments(prev => prev.map(p => p.id === sorted[0].id ? {
@@ -240,7 +291,7 @@ export function AppProvider({ children }) {
         ...(paymentDetails?.paymentMode && { paymentMode: paymentDetails.paymentMode }),
         ...(paymentDetails?.paymentDetail !== undefined && { paymentDetail: paymentDetails.paymentDetail }),
       } : p));
-      pushLog(`${client.name}'s payment → "${newStatus}" · Invoice ${sorted[0].id} synced`, 'sync');
+      pushLog(`✅ Payment marked as "${newStatus}" for ${client.name} · Revenue graph updating instantly!`, 'success');
     } else if (newStatus === 'Paid' && paymentDetails?.paidAmount) {
       // No invoice exists – create one so the money shows up in every graph
       const autoId = `INV-${Date.now()}`;
@@ -258,7 +309,7 @@ export function AppProvider({ children }) {
         paymentDetail: paymentDetails.paymentDetail || '',
       };
       setPayments(prev => [...prev, newPayment]);
-      pushLog(`Payment ₹${paymentDetails.paidAmount.toLocaleString()} recorded for ${client.name} (auto-invoice ${autoId})`, 'success');
+      pushLog(`✅ Payment ₹${paymentDetails.paidAmount.toLocaleString()} recorded for ${client.name} · Charts updating live!`, 'success');
     } else {
       pushLog(`${client.name}'s payment → "${newStatus}"`, 'info');
     }

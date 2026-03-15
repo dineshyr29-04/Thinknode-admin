@@ -25,6 +25,17 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      animation: {
+        'spin-slow': 'spin 2s linear infinite',
+        'pulse-glow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'slide-in-up': 'slideInUp 0.3s ease-out',
+      },
+      keyframes: {
+        slideInUp: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        }
       }
     },
   },

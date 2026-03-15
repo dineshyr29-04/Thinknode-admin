@@ -3,7 +3,7 @@ import StatsCard from '../components/StatsCard';
 import WorkflowStatus from '../components/WorkflowStatus';
 import {
   Users, FolderKanban, Clock, IndianRupee, Zap,
-  RefreshCw, X, CheckCircle2, AlertTriangle, Info, Sparkles
+  RefreshCw, X, CheckCircle2, AlertTriangle, Info, Sparkles, TrendingUp
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { activityData } from '../data/dummyData';
 import clsx from 'clsx';
+import { useState, useEffect, useRef } from 'react';
 
 const logIcons = {
   sync: <RefreshCw size={12} className="text-blue-400" />,
@@ -58,6 +59,29 @@ const PieRevenueTooltip = ({ active, payload }) => {
 
 export default function Dashboard() {
   const { stats, workflows, projects, clients, syncLog, dismissLog, clearLog, serviceBreakdown, revenueData } = useApp();
+  const [chartUpdating, setChartUpdating] = useState(false);
+  const chartTimeoutRef = useRef(null);
+  const prevRevenueRef = useRef(revenueData);
+  const prevBreakdownRef = useRef(serviceBreakdown);
+
+  // Show visual feedback when charts update
+  useEffect(() => {
+    const revenueChanged = JSON.stringify(prevRevenueRef.current) !== JSON.stringify(revenueData);
+    const breakdownChanged = JSON.stringify(prevBreakdownRef.current) !== JSON.stringify(serviceBreakdown);
+    
+    if (revenueChanged || breakdownChanged) {
+      setChartUpdating(true);
+      prevRevenueRef.current = revenueData;
+      prevBreakdownRef.current = serviceBreakdown;
+      
+      clearTimeout(chartTimeoutRef.current);
+      chartTimeoutRef.current = setTimeout(() => {
+        setChartUpdating(false);
+      }, 800);
+    }
+    
+    return () => clearTimeout(chartTimeoutRef.current);
+  }, [revenueData, serviceBreakdown]);
 
   const statsCards = [
     { title: 'Total Clients', value: stats.totalClients, icon: Users, color: 'blue', trend: 12, subtitle: 'All time' },
@@ -99,17 +123,25 @@ export default function Dashboard() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue Chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+        <div className={clsx('lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 transition-all', chartUpdating && 'ring-2 ring-blue-400 ring-opacity-50')}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-semibold text-slate-800 dark:text-white">Revenue Overview</h2>
               <p className="text-xs text-slate-400">Last 6 months</p>
             </div>
-            <span className="text-xs text-emerald-500 font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg">
-              Total Earned: ₹{((stats.totalEarned ?? 0) / 1000).toFixed(0)}K
-            </span>
+            <div className="flex items-center gap-2">
+              {chartUpdating && (
+                <span className="flex items-center gap-1.5 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-lg animate-pulse-glow">
+                  <TrendingUp size={12} className="animate-spin-slow" />
+                  Updating...
+                </span>
+              )}
+              <span className="text-xs text-emerald-500 font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg">
+                Total Earned: ₹{((stats.totalEarned ?? 0) / 1000).toFixed(0)}K
+              </span>
+            </div>
           </div>
-          <div className="h-[220px] sm:h-[240px]">
+          <div className={clsx('h-[220px] sm:h-[240px] transition-opacity', chartUpdating && 'opacity-75')}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueData}>
                 <defs>
@@ -129,53 +161,62 @@ export default function Dashboard() {
         </div>
 
         {/* Service Breakdown Pie */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
-          <h2 className="text-sm font-semibold text-slate-800 dark:text-white mb-1">Service Revenue</h2>
-          <p className="text-xs text-slate-400 mb-4">Breakdown by service type</p>
-          {serviceBreakdown.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[160px] gap-2">
-              <div className="relative w-[110px] h-[110px]">
-                <div className="w-full h-full rounded-full border-[10px] border-dashed border-slate-200 dark:border-slate-700" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <IndianRupee size={22} className="text-slate-300 dark:text-slate-600" />
-                </div>
-              </div>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center leading-5">
-                No paid invoices yet<br />
-                Chart updates when income is added
-              </p>
+        <div className={clsx('bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 transition-all', chartUpdating && 'ring-2 ring-blue-400 ring-opacity-50')}>
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800 dark:text-white">Service Revenue</h2>
+              <p className="text-xs text-slate-400">Breakdown by service type</p>
             </div>
-          ) : (
-            <>
-              <div className="h-[190px] sm:h-[210px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={serviceBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={70}
-                      activeOuterRadius={78}
-                      dataKey="value"
-                      paddingAngle={3}
-                    >
-                      {serviceBreakdown.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                    </Pie>
-                    <Tooltip content={<PieRevenueTooltip />} wrapperStyle={{ zIndex: 30 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                {serviceBreakdown.map(s => (
-                  <div key={s.name} className="flex items-center gap-1.5 min-w-0">
-                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
-                    <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{s.name}: ₹{(s.value / 1000).toFixed(0)}K</span>
+            {chartUpdating && (
+              <RefreshCw size={12} className="text-blue-500 animate-spin" />
+            )}
+          </div>
+          <div className="mt-4">
+            {serviceBreakdown.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[160px] gap-2">
+                <div className="relative w-[110px] h-[110px]">
+                  <div className="w-full h-full rounded-full border-[10px] border-dashed border-slate-200 dark:border-slate-700" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <IndianRupee size={22} className="text-slate-300 dark:text-slate-600" />
                   </div>
-                ))}
+                </div>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center leading-5">
+                  No paid invoices yet<br />
+                  Chart updates when income is added
+                </p>
               </div>
-            </>
-          )}
+            ) : (
+              <>
+                <div className={clsx('h-[190px] sm:h-[210px] transition-opacity', chartUpdating && 'opacity-75')}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={serviceBreakdown}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={70}
+                        activeOuterRadius={78}
+                        dataKey="value"
+                        paddingAngle={3}
+                      >
+                        {serviceBreakdown.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                      </Pie>
+                      <Tooltip content={<PieRevenueTooltip />} wrapperStyle={{ zIndex: 30 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                  {serviceBreakdown.map(s => (
+                    <div key={s.name} className="flex items-center gap-1.5 min-w-0 animate-slide-in-up">
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                      <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{s.name}: ₹{(s.value / 1000).toFixed(0)}K</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
