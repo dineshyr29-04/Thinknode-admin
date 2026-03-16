@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import { on as socketOn, off as socketOff, emit as socketEmit } from '../socket';
 import {
   clients as initialClients,
   projects as initialProjects,
@@ -70,6 +71,27 @@ export function AppProvider({ children }) {
   const addNotification = useCallback((text, type = 'info') => {
     setNotifications(prev => [{ id: Date.now(), text, type, time: 'just now' }, ...prev]);
   }, []);
+
+  useEffect(() => {
+    const handleSync = (payload) => {
+      pushLog(payload?.message || `sync:${JSON.stringify(payload)}`, 'sync');
+    };
+    const handleNotification = (payload) => {
+      addNotification(payload?.text || JSON.stringify(payload), payload?.type || 'info');
+    };
+
+    socketOn('sync', handleSync);
+    socketOn('notification', handleNotification);
+    socketOn('connect', () => pushLog('Connected to sync server', 'success'));
+    socketOn('disconnect', () => pushLog('Disconnected from sync server', 'warning'));
+
+    return () => {
+      socketOff('sync', handleSync);
+      socketOff('notification', handleNotification);
+      socketOff('connect');
+      socketOff('disconnect');
+    };
+  }, [pushLog, addNotification]);
 
   // ── CLIENTS ─────────────────────────────────────────────────────────────────
   const addClient = useCallback((client) => {
@@ -397,6 +419,7 @@ export function AppProvider({ children }) {
       sidebarOpen, setSidebarOpen,
       notifications, addNotification,
       syncLog, dismissLog, clearLog,
+      socketEmit,
       stats,
       serviceBreakdown,
       revenueData,

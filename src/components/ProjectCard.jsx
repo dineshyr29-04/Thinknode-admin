@@ -1,5 +1,6 @@
 import { Paperclip, Calendar, Edit3, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
+import { emit as socketEmit } from '../socket';
 
 const priorityMap = {
   High: 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400',
@@ -72,7 +73,7 @@ export default function ProjectCard({ project, dragHandleProps, onEdit, onDelete
           )}
           {onDelete && (
             <button
-              onClick={e => { e.stopPropagation(); onDelete(project.id); }}
+              onClick={e => { e.stopPropagation(); onDelete(project.id); try { socketEmit('project:deleted', { id: project.id }); } catch (err) {} }}
               className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             >
               <Trash2 size={11} />
