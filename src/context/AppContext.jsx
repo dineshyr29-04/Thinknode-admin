@@ -15,21 +15,93 @@ import {
 const AppContext = createContext(null);
 
 const load = (key, fallback) => { try { const v = localStorage.getItem(key); return v !== null ? JSON.parse(v) : fallback; } catch { return fallback; } };
+const save = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { } };
+
+const loadUserData = (userId, key, fallback) => {
+  const userKey = `tn_user_${userId}_${key}`;
+  return load(userKey, fallback);
+};
+
+const saveUserData = (userId, key, value) => {
+  const userKey = `tn_user_${userId}_${key}`;
+  save(userKey, value);
+};
 
 export function AppProvider({ children }) {
-  const [clients, setClients] = useState(() => load('tn_clients', initialClients));
-  const [projects, setProjects] = useState(() => load('tn_projects', initialProjects));
-  const [workflows, setWorkflows] = useState(() => load('tn_workflows', initialWorkflows));
-  const [webProjects, setWebProjects] = useState(() => load('tn_webProjects', initialWebProjects));
-  const [frontendApps, setFrontendApps] = useState(() => load('tn_frontendApps', initialFrontendApps));
-  const [posterProjects, setPosterProjects] = useState(() => load('tn_posterProjects', initialPosterProjects));
-  const [videoProjects, setVideoProjects] = useState(() => load('tn_videoProjects', initialVideoProjects));
-  const [payments, setPayments] = useState(() => load('tn_payments', initialPayments));
-  const [files, setFiles] = useState(() => load('tn_files', initialFiles));
-  const [darkMode, setDarkMode] = useState(() => load('tn_darkMode', true));
+  // ── AUTHENTICATION ─────────────────────────────────────────────────────────────
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!load('tn_activeSession', null));
+  const [currentUser, setCurrentUser] = useState(() => load('tn_activeSession', null));
+  
+  // Initialize demo user on first load
+  useEffect(() => {
+    const users = load('tn_users', {});
+    if (Object.keys(users).length === 0) {
+      const demoUser = {
+        id: Date.now(),
+        email: 'vicky@example.com',
+        password: 'password123',
+        name: 'Vicky',
+        company: 'ThinkNode',
+        role: 'admin',
+        createdAt: new Date().toISOString(),
+        avatar: 'https://ui-avatars.com/api/?name=Vicky&background=8b5cf6',
+      };
+      users['vicky@example.com'] = demoUser;
+      save('tn_users', users);
+    }
+  }, []);
+
+  const login = useCallback((user) => {
+    const userWithDefaults = {
+      ...user,
+      name: user.name || user.email.split('@')[0],
+      role: user.role || 'user',
+    };
+    setCurrentUser(userWithDefaults);
+    setIsAuthenticated(true);
+    save('tn_activeSession', userWithDefaults);
+    
+    // Initialize user-specific data if not exists
+    if (!loadUserData(user.id, 'initialized', null)) {
+      saveUserData(user.id, 'clients', initialClients);
+      saveUserData(user.id, 'projects', initialProjects);
+      saveUserData(user.id, 'workflows', initialWorkflows);
+      saveUserData(user.id, 'webProjects', initialWebProjects);
+      saveUserData(user.id, 'frontendApps', initialFrontendApps);
+      saveUserData(user.id, 'posterProjects', initialPosterProjects);
+      saveUserData(user.id, 'videoProjects', initialVideoProjects);
+      saveUserData(user.id, 'payments', initialPayments);
+      saveUserData(user.id, 'files', initialFiles);
+      saveUserData(user.id, 'darkMode', true);
+      saveUserData(user.id, 'initialized', true);
+    }
+  }, []);
+
+  const signup = useCallback((user) => {
+    login(user);
+  }, [login]);
+
+  const logout = useCallback(() => {
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('tn_activeSession');
+  }, []);
+
+  const isAdmin = currentUser?.role === 'admin';
+
+  // Load user-specific data
+  const userId = currentUser?.id;
+  const [clients, setClients] = useState(() => loadUserData(userId, 'clients', initialClients));
+  const [projects, setProjects] = useState(() => loadUserData(userId, 'projects', initialProjects));
+  const [workflows, setWorkflows] = useState(() => loadUserData(userId, 'workflows', initialWorkflows));
+  const [webProjects, setWebProjects] = useState(() => loadUserData(userId, 'webProjects', initialWebProjects));
+  const [frontendApps, setFrontendApps] = useState(() => loadUserData(userId, 'frontendApps', initialFrontendApps));
+  const [posterProjects, setPosterProjects] = useState(() => loadUserData(userId, 'posterProjects', initialPosterProjects));
+  const [videoProjects, setVideoProjects] = useState(() => loadUserData(userId, 'videoProjects', initialVideoProjects));
+  const [payments, setPayments] = useState(() => loadUserData(userId, 'payments', initialPayments));
+  const [files, setFiles] = useState(() => loadUserData(userId, 'files', initialFiles));
+  const [darkMode, setDarkMode] = useState(() => loadUserData(userId, 'darkMode', true));
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(() => load('tn_currentUser', { name: 'Vicky', role: 'admin' }));
-  const isAdmin = currentUser.role === 'admin';
   const [notifications, setNotifications] = useState([]);
   const [syncLog, setSyncLog] = useState([]);
 
@@ -41,17 +113,16 @@ export function AppProvider({ children }) {
   if (darkMode) document.documentElement.classList.add('dark');
 
   // ── PERSISTENCE ────────────────────────────────────────────────────────────────
-  useEffect(() => { localStorage.setItem('tn_clients', JSON.stringify(clients)); }, [clients]);
-  useEffect(() => { localStorage.setItem('tn_projects', JSON.stringify(projects)); }, [projects]);
-  useEffect(() => { localStorage.setItem('tn_workflows', JSON.stringify(workflows)); }, [workflows]);
-  useEffect(() => { localStorage.setItem('tn_webProjects', JSON.stringify(webProjects)); }, [webProjects]);
-  useEffect(() => { localStorage.setItem('tn_frontendApps', JSON.stringify(frontendApps)); }, [frontendApps]);
-  useEffect(() => { localStorage.setItem('tn_posterProjects', JSON.stringify(posterProjects)); }, [posterProjects]);
-  useEffect(() => { localStorage.setItem('tn_videoProjects', JSON.stringify(videoProjects)); }, [videoProjects]);
-  useEffect(() => { localStorage.setItem('tn_payments', JSON.stringify(payments)); }, [payments]);
-  useEffect(() => { localStorage.setItem('tn_files', JSON.stringify(files)); }, [files]);
-  useEffect(() => { localStorage.setItem('tn_darkMode', JSON.stringify(darkMode)); }, [darkMode]);
-  useEffect(() => { localStorage.setItem('tn_currentUser', JSON.stringify(currentUser)); }, [currentUser]);
+  useEffect(() => { if (userId) saveUserData(userId, 'clients', clients); }, [clients, userId]);
+  useEffect(() => { if (userId) saveUserData(userId, 'projects', projects); }, [projects, userId]);
+  useEffect(() => { if (userId) saveUserData(userId, 'workflows', workflows); }, [workflows, userId]);
+  useEffect(() => { if (userId) saveUserData(userId, 'webProjects', webProjects); }, [webProjects, userId]);
+  useEffect(() => { if (userId) saveUserData(userId, 'frontendApps', frontendApps); }, [frontendApps, userId]);
+  useEffect(() => { if (userId) saveUserData(userId, 'posterProjects', posterProjects); }, [posterProjects, userId]);
+  useEffect(() => { if (userId) saveUserData(userId, 'videoProjects', videoProjects); }, [videoProjects, userId]);
+  useEffect(() => { if (userId) saveUserData(userId, 'payments', payments); }, [payments, userId]);
+  useEffect(() => { if (userId) saveUserData(userId, 'files', files); }, [files, userId]);
+  useEffect(() => { if (userId) saveUserData(userId, 'darkMode', darkMode); }, [darkMode, userId]);
 
   // ── SYNC LOG (shown on Dashboard) ────────────────────────────────────────────
   const pushLog = useCallback((message, type = 'info') => {
@@ -392,6 +463,13 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
+      // Authentication
+      isAuthenticated,
+      currentUser,
+      login,
+      signup,
+      logout,
+
       clients,
       addClient,
       updateClient: (id, data) => updateClient(id, data, clients, projects, payments),
@@ -423,7 +501,7 @@ export function AppProvider({ children }) {
       stats,
       serviceBreakdown,
       revenueData,
-      currentUser, setCurrentUser, isAdmin,
+      isAdmin,
     }}>
       {children}
     </AppContext.Provider>
