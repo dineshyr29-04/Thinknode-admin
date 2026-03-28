@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { Bell, Sun, Moon, Search, X, Menu, Shield, Eye } from 'lucide-react';
+import { Bell, Sun, Moon, Search, X, Menu, Shield, Eye, LogOut } from 'lucide-react';
 
 
 const pageTitles = {
@@ -17,17 +17,14 @@ const pageTitles = {
 };
 
 export default function Navbar() {
-  const { darkMode, toggleDark, notifications, setSidebarOpen, currentUser, setCurrentUser, isAdmin } = useApp();
+  const { darkMode, toggleDark, notifications, setSidebarOpen, currentUser, logout, isAdmin } = useApp();
   const location = useLocation();
   const [showNotif, setShowNotif] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [search, setSearch] = useState('');
 
   const title = pageTitles[location.pathname] ?? 'ThinkNode Dash';
   const unread = notifications.length;
-
-  const toggleRole = () => {
-    setCurrentUser(u => ({ ...u, role: u.role === 'admin' ? 'viewer' : 'admin' }));
-  };
 
   return (
     <header className="sticky top-0 z-30 h-16 flex items-center gap-4 px-4 sm:px-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700/50">
@@ -42,7 +39,7 @@ export default function Navbar() {
       {/* Page title */}
       <div className="flex-1">
         <h1 className="text-lg font-semibold text-slate-800 dark:text-white">{title}</h1>
-        <p className="text-xs text-slate-400">Good evening, {currentUser.name}</p>
+        <p className="text-xs text-slate-400">Welcome, {currentUser?.name || 'User'}</p>
       </div>
 
       {/* Search */}
@@ -61,19 +58,14 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* Role toggle */}
-      <button
-        onClick={toggleRole}
-        title={isAdmin ? 'Switch to Viewer mode' : 'Switch to Admin mode'}
-        className={`hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all ${
-          isAdmin
-            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700/50 hover:bg-blue-100 dark:hover:bg-blue-900/40'
-            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
-        }`}
-      >
-        {isAdmin ? <Shield size={13} /> : <Eye size={13} />}
-        {isAdmin ? 'Admin' : 'Viewer'}
-      </button>
+      {/* Role indicator */}
+      {isAdmin && (
+        <span className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700/50`}
+        >
+          <Shield size={13} />
+          Admin
+        </span>
+      )}
 
       {/* Dark mode */}
       <button
@@ -125,12 +117,40 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* Avatar */}
-      <Link to="/settings">
-        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer">
-          TN
-        </div>
-      </Link>
+      {/* User Menu */}
+      <div className="relative">
+        <button
+          onClick={() => setShowUserMenu(!showUserMenu)}
+          className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold hover:shadow-lg transition-shadow cursor-pointer"
+          title={currentUser?.name}
+        >
+          {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
+        </button>
+
+        {showUserMenu && (
+          <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
+            <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+              <p className="text-sm font-semibold text-slate-800 dark:text-white">{currentUser?.name}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{currentUser?.email}</p>
+            </div>
+            <Link to="/settings">
+              <button className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                ⚙️ Settings
+              </button>
+            </Link>
+            <button
+              onClick={() => {
+                logout();
+                setShowUserMenu(false);
+              }}
+              className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2 border-t border-slate-200 dark:border-slate-700"
+            >
+              <LogOut size={14} />
+              Logout
+            </button>
+          </div>
+        )}
+      </div>
     </header>
   );
 }
