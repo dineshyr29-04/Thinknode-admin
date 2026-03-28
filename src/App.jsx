@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
+import { AppProvider, useApp } from './context/AppContext';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
@@ -11,7 +11,7 @@ import Files from './pages/Files';
 import Payments from './pages/Payments';
 import Settings from './pages/Settings';
 import InvoiceGenerator from './pages/InvoiceGenerator';
-import { useApp } from './context/AppContext';
+import Login from './pages/Login';
 import clsx from 'clsx';
 
 function Layout() {
@@ -40,11 +40,21 @@ function Layout() {
   );
 }
 
+function AppContent() {
+  const { isAuthenticated, login, signup } = useApp();
+
+  if (!isAuthenticated) {
+    return <Login onLogin={login} onSignup={signup} />;
+  }
+
+  return <Layout />;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <AppProvider>
-        <Layout />
+        <AppContent />
       </AppProvider>
     </BrowserRouter>
   );
