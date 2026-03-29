@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import clsx from 'clsx';
+import { authService } from '../services/authService';
 
 export default function Login({ onLogin, onSignup }) {
   const [isSignupMode, setIsSignupMode] = useState(false);
@@ -44,21 +45,20 @@ export default function Login({ onLogin, onSignup }) {
         return;
       }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Send login request to backend
+      const response = await authService.login(formData.email, formData.password);
+      
+      // Backend returns { user, token }
+      const userToPass = {
+        ...response.user,
+        token: response.token,
+        email: formData.email,
+      };
 
-      const users = JSON.parse(localStorage.getItem('tn_users') || '{}');
-      const user = users[formData.email];
-
-      if (!user || user.password !== formData.password) {
-        setError('Invalid email or password');
-        setLoading(false);
-        return;
-      }
-
-      onLogin(user);
+      onLogin(userToPass);
     } catch (err) {
-      setError('Login failed. Please try again.');
+      console.error('Login error:', err);
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -94,34 +94,28 @@ export default function Login({ onLogin, onSignup }) {
         return;
       }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const users = JSON.parse(localStorage.getItem('tn_users') || '{}');
-
-      if (users[formData.email]) {
-        setError('An account with this email already exists');
-        setLoading(false);
-        return;
-      }
-
-      const newUser = {
-        id: Date.now(),
+      // Send signup request to backend
+      const signupPayload = {
         email: formData.email,
         password: formData.password,
         name: formData.name,
         company: formData.company || 'Personal',
         role: formData.role || 'user',
-        createdAt: new Date().toISOString(),
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`,
       };
 
-      users[formData.email] = newUser;
-      localStorage.setItem('tn_users', JSON.stringify(users));
+      const response = await authService.signup(signupPayload);
+      
+      // Backend returns { user, token }
+      const userToPass = {
+        ...response.user,
+        token: response.token,
+        email: formData.email,
+      };
 
-      onSignup(newUser);
+      onSignup(userToPass);
     } catch (err) {
-      setError('Signup failed. Please try again.');
+      console.error('Signup error:', err);
+      setError(err.message || 'Signup failed. Please try again.');
     } finally {
       setLoading(false);
     }

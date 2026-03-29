@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import { on as socketOn, off as socketOff, emit as socketEmit } from '../socket';
+import { updateSocketAuth } from '../socket';
 import {
   clients as initialClients,
   projects as initialProjects,
@@ -31,25 +32,6 @@ export function AppProvider({ children }) {
   // ── AUTHENTICATION ─────────────────────────────────────────────────────────────
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!load('tn_activeSession', null));
   const [currentUser, setCurrentUser] = useState(() => load('tn_activeSession', null));
-  
-  // Initialize demo user on first load
-  useEffect(() => {
-    const users = load('tn_users', {});
-    if (Object.keys(users).length === 0) {
-      const demoUser = {
-        id: Date.now(),
-        email: 'vicky@example.com',
-        password: 'password123',
-        name: 'Vicky',
-        company: 'ThinkNode',
-        role: 'admin',
-        createdAt: new Date().toISOString(),
-        avatar: 'https://ui-avatars.com/api/?name=Vicky&background=8b5cf6',
-      };
-      users['vicky@example.com'] = demoUser;
-      save('tn_users', users);
-    }
-  }, []);
 
   const login = useCallback((user) => {
     const userWithDefaults = {
@@ -61,19 +43,9 @@ export function AppProvider({ children }) {
     setIsAuthenticated(true);
     save('tn_activeSession', userWithDefaults);
     
-    // Initialize user-specific data if not exists
-    if (!loadUserData(user.id, 'initialized', null)) {
-      saveUserData(user.id, 'clients', initialClients);
-      saveUserData(user.id, 'projects', initialProjects);
-      saveUserData(user.id, 'workflows', initialWorkflows);
-      saveUserData(user.id, 'webProjects', initialWebProjects);
-      saveUserData(user.id, 'frontendApps', initialFrontendApps);
-      saveUserData(user.id, 'posterProjects', initialPosterProjects);
-      saveUserData(user.id, 'videoProjects', initialVideoProjects);
-      saveUserData(user.id, 'payments', initialPayments);
-      saveUserData(user.id, 'files', initialFiles);
-      saveUserData(user.id, 'darkMode', true);
-      saveUserData(user.id, 'initialized', true);
+    // Update socket auth with token
+    if (user.token) {
+      updateSocketAuth(user.token);
     }
   }, []);
 
