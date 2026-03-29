@@ -7,17 +7,64 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build Output
 dist/
 dist-ssr/
-*.local
+build/
+*.tsbuildinfo
 
-# Editor directories and files
+# Environment variables (keep .env.example in repo, not actual .env files)
+.env
+.env.local
+.env.*.local
+.env.production.local
+.env.development.local
+.env.test.local
+
+# IDE and Editor directories
 .vscode/
 .idea/
+.vscode-test/
+*.swp
+*.swo
+*~
 .DS_Store
+*.sublime-project
+*.sublime-workspace
+.history/
+
+# OS specific files
+Thumbs.db
+.DS_Store
+
+# Build and runtime artifacts
+*.local
+.cache/
+.parcel-cache/
+.turbo/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# IDE specific
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# MacOS
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+desktop.ini
+$RECYCLE.BIN/
