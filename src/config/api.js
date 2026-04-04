@@ -7,11 +7,11 @@ export const API_ENDPOINT = `${API_BASE_URL}${API_VERSION}`;
 export const ENDPOINTS = {
   // Authentication
   AUTH: {
-    LOGIN: '/auth/login',
-    SIGNUP: '/auth/signup',
-    LOGOUT: '/auth/logout',
-    REFRESH: '/auth/refresh',
-    VERIFY: '/auth/verify',
+    LOGIN: '/auth/admin/login',
+    SIGNUP: '/auth/admin/signup',
+    LOGOUT: '/auth/admin/logout',
+    REFRESH: '/auth/admin/refresh',
+    VERIFY: '/auth/admin/verify',
   },
   
   // Users
