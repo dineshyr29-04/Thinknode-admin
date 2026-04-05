@@ -75,6 +75,7 @@ export function AppProvider({ children }) {
   const [darkMode, setDarkMode] = useState(() => loadUserData(userId, 'darkMode', true));
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [toasts, setToasts] = useState([]);
   const [syncLog, setSyncLog] = useState([]);
 
   const toggleDark = () => {
@@ -110,9 +111,48 @@ export function AppProvider({ children }) {
   const dismissLog = useCallback((id) => setSyncLog(prev => prev.filter(e => e.id !== id)), []);
   const clearLog = useCallback(() => setSyncLog([]), []);
 
-  // ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
-  const addNotification = useCallback((text, type = 'info') => {
-    setNotifications(prev => [{ id: Date.now(), text, type, time: 'just now' }, ...prev]);
+  // ── NOTIFICATIONS & TOASTS ────────────────────────────────────────────────────
+  const removeToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const addNotification = useCallback((payload, type = 'info') => {
+    const id = Date.now() + Math.random();
+    
+    let text = typeof payload === 'string' ? payload : 'New notification received';
+    let data = null;
+
+    if (typeof payload === 'object' && payload !== null) {
+      data = payload;
+      if (payload.project_title) text = `New Entry: ${payload.project_title}`;
+      else if (payload.customer_name) text = `New Request from ${payload.customer_name}`;
+      else if (payload.text) text = payload.text;
+    }
+
+    const notifObj = {
+      id,
+      text,
+      data,
+      type,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setNotifications(prev => [notifObj, ...prev]);
+    setToasts(prev => [...prev, notifObj]);
+
+    // Native Browser Notification
+    if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+      new Notification("ThinkNode Alerts", {
+        body: text,
+        icon: '/vite.svg', // Placeholder, ideally your app logo
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
   }, []);
 
   useEffect(() => {
@@ -120,7 +160,7 @@ export function AppProvider({ children }) {
       pushLog(payload?.message || `sync:${JSON.stringify(payload)}`, 'sync');
     };
     const handleNotification = (payload) => {
-      addNotification(payload?.text || JSON.stringify(payload), payload?.type || 'info');
+      addNotification(payload, payload?.type || 'info');
     };
 
     socketOn('sync', handleSync);
@@ -468,6 +508,7 @@ export function AppProvider({ children }) {
       darkMode, toggleDark,
       sidebarOpen, setSidebarOpen,
       notifications, addNotification,
+      toasts, removeToast,
       syncLog, dismissLog, clearLog,
       socketEmit,
       stats,

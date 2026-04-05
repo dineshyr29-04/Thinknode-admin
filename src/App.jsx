@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
+import ToastContainer from './components/ToastContainer';
 import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
 import Projects from './pages/Projects';
@@ -18,6 +19,7 @@ function Layout() {
   useApp();
   return (
     <div className="flex h-dvh w-full bg-violet-50 dark:bg-[#0f1117] overflow-x-hidden">
+      <ToastContainer />
       <Sidebar />
       <div className={clsx('flex flex-col flex-1 min-w-0 transition-all duration-300')}>
         <Navbar />

@@ -3,7 +3,7 @@ import StatsCard from '../components/StatsCard';
 import WorkflowStatus from '../components/WorkflowStatus';
 import {
   Users, FolderKanban, Clock, IndianRupee, Zap,
-  RefreshCw, X, CheckCircle2, AlertTriangle, Info, Sparkles, TrendingUp
+  RefreshCw, X, CheckCircle2, AlertTriangle, Info, Sparkles, TrendingUp, BellRing
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -58,7 +58,7 @@ const PieRevenueTooltip = ({ active, payload }) => {
 };
 
 export default function Dashboard() {
-  const { stats, workflows, projects, clients, syncLog, dismissLog, clearLog, serviceBreakdown, revenueData } = useApp();
+  const { stats, workflows, projects, clients, syncLog, dismissLog, clearLog, serviceBreakdown, revenueData, addNotification } = useApp();
   const [chartUpdating, setChartUpdating] = useState(false);
   const chartTimeoutRef = useRef(null);
   const prevRevenueRef = useRef(revenueData);
@@ -98,6 +98,25 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
+
+      {/* ── Simulate Notification Action (Temporary) ── */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => addNotification({
+            customer_name: "Jane Doe",
+            email: "jane@example.com",
+            service_type: "web_design",
+            project_title: "Portfolio Site",
+            description: "I want a portfolio site",
+            customization: { cms: "none", pages: "1-3" },
+            budget: "20000",
+            deadline: "2026-05-12"
+          })}
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-indigo-500/30"
+        >
+          <BellRing size={16} /> Simulate Notification
+        </button>
+      </div>
 
       {/* ── Sync Warning Banner ── */}
       {warnings.length > 0 && (

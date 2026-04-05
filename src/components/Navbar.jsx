@@ -89,28 +89,63 @@ export default function Navbar() {
         </button>
 
         {showNotif && (
-          <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
+          <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 max-h-[80vh] flex flex-col bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
             <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
               <span className="text-sm font-semibold text-slate-800 dark:text-white">Notifications</span>
               <span className="text-xs bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full">{unread} new</span>
             </div>
-            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-700 overflow-y-auto">
               {notifications.map(n => (
-                <li key={n.id} className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                  <div className="flex items-start gap-2">
+                <li key={n.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <div className="flex items-start gap-3">
                     <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
                       n.type === 'warning' ? 'bg-yellow-500' :
                       n.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
                     }`} />
-                    <div>
-                      <p className="text-xs text-slate-700 dark:text-slate-300">{n.text}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{n.time}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{n.text}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{n.time}</p>
+                      
+                      {n.data && (n.data.customer_name || n.data.project_title) && (
+                        <div className="mt-2 p-2.5 rounded-lg bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-700/50">
+                          {n.data.customer_name && (
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                                {n.data.customer_name}
+                              </span>
+                              {n.data.email && <span className="text-[10px] text-slate-500 truncate">{n.data.email}</span>}
+                            </div>
+                          )}
+                          {n.data.project_title && (
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium line-clamp-1 mb-1">
+                              {n.data.project_title}
+                            </p>
+                          )}
+                          {(n.data.budget || n.data.service_type) && (
+                            <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                              {n.data.service_type && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 font-bold uppercase tracking-wider">
+                                  {n.data.service_type.replace('_', ' ')}
+                                </span>
+                              )}
+                              {n.data.budget && (
+                                <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                                  ${n.data.budget}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </li>
               ))}
               {notifications.length === 0 && (
-                <li className="px-4 py-6 text-center text-xs text-slate-400">No notifications</li>
+                <li className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                  <Bell size={24} className="mx-auto mb-2 opacity-50" />
+                  No new notifications
+                </li>
               )}
             </ul>
           </div>
