@@ -72,10 +72,15 @@ export const apiCall = async (endpoint, options = {}) => {
 
     // Handle unauthorized
     if (response.status === 401) {
-      clearToken();
-      console.log(`Unauthorized ACCESS Denied: ${response.status} ${response.url}`)
-      window.location.href = '/login';
-      throw new Error('Unauthorized. Please login again.');
+      // Don't redirect if it's the login endpoint
+      if (endpoint === '/admin/login') {
+        console.warn('Login failed: Unauthorized credentials provided.');
+      } else {
+        clearToken();
+        console.log(`Unauthorized ACCESS Denied: ${response.status} ${response.url}`)
+        window.location.href = '/login';
+        throw new Error('Unauthorized. Please login again.');
+      }
     }
 
     const data = await response.json();

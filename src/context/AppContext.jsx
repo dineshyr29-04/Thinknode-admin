@@ -49,9 +49,9 @@ export function AppProvider({ children }) {
     }
   }, []);
 
-  const signup = useCallback((user) => {
-    login(user);
-  }, [login]);
+  const signup = useCallback(() => {
+    // Signup no longer automatically logs the user in
+  }, []);
 
   const logout = useCallback(() => {
     setCurrentUser(null);

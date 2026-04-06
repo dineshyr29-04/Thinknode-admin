@@ -8,6 +8,7 @@ export default function Login({ onLogin, onSignup }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -21,6 +22,7 @@ export default function Login({ onLogin, onSignup }) {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setError('');
+    setSuccess('');
   };
 
   const validateEmail = (email) => {
@@ -55,7 +57,12 @@ export default function Login({ onLogin, onSignup }) {
         email: formData.email,
       };
 
-      onLogin(userToPass);
+      setSuccess('Login successful! Redirecting to dashboard...');
+      
+      // Delay redirection to show success message
+      setTimeout(() => {
+        onLogin(userToPass);
+      }, 2000);
     } catch (err) {
       console.error('Login error:', err);
       setError(err.message || 'Login failed. Please check your credentials.');
@@ -105,14 +112,18 @@ export default function Login({ onLogin, onSignup }) {
 
       const response = await authService.signup(signupPayload);
       
-      // Backend returns { user, token }
-      const userToPass = {
-        ...response.user,
-        token: response.token,
-        email: formData.email,
-      };
-
-      onSignup(userToPass);
+      setSuccess('Account created successfully! Please sign in with your credentials.');
+      
+      // Reset form and switch to login mode
+      setFormData({
+        email: formData.email, // Keep email for convenience
+        password: '',
+        name: '',
+        confirmPassword: '',
+        company: '',
+        role: 'user',
+      });
+      setIsSignupMode(false);
     } catch (err) {
       console.error('Signup error:', err);
       setError(err.message || 'Signup failed. Please try again.');
@@ -139,6 +150,13 @@ export default function Login({ onLogin, onSignup }) {
         {error && (
           <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
             <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {success && (
+          <div className="mb-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+            <p className="text-emerald-700 dark:text-emerald-400 text-sm font-medium">{success}</p>
           </div>
         )}
 
