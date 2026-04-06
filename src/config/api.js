@@ -8,7 +8,7 @@ export const ENDPOINTS = {
   // Authentication
   AUTH: {
     LOGIN: '/admin/login',
-    SIGNUP: '/admin/signup',
+    SIGNUP: '/admin/register',
     LOGOUT: '/admin/logout',
     REFRESH: '/admin/refresh',
     VERIFY: '/admin/verify',
