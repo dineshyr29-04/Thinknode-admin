@@ -7,7 +7,7 @@ export const API_ENDPOINT = `${API_BASE_URL}${API_VERSION}`;
 export const ENDPOINTS = {
   // Authentication
   AUTH: {
-    LOGIN: '/auth/admin/login',
+    LOGIN: '/admin/login',
     SIGNUP: '/auth/admin/signup',
     LOGOUT: '/auth/admin/logout',
     REFRESH: '/auth/admin/refresh',
