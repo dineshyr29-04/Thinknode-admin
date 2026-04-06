@@ -8,10 +8,10 @@ export const ENDPOINTS = {
   // Authentication
   AUTH: {
     LOGIN: '/admin/login',
-    SIGNUP: '/auth/admin/signup',
-    LOGOUT: '/auth/admin/logout',
-    REFRESH: '/auth/admin/refresh',
-    VERIFY: '/auth/admin/verify',
+    SIGNUP: '/admin/signup',
+    LOGOUT: '/admin/logout',
+    REFRESH: '/admin/refresh',
+    VERIFY: '/admin/verify',
   },
   
   // Users
