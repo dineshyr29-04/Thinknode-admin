@@ -43,6 +43,15 @@ export const apiCall = async (endpoint, options = {}) => {
   const url = `${API_ENDPOINT}${endpoint}`;
   const token = getToken();
 
+  // Request logging
+  const safeBody = body ? { ...body } : null;
+  if (safeBody && safeBody.password) safeBody.password = '********';
+  
+  console.log(`[API Request] ${method} ${url}`, {
+    headers: { ...headers, ...(token && !skipAuth ? { Authorization: 'Bearer [HIDDEN]' } : {}) },
+    body: safeBody
+  });
+
   const requestHeaders = {
     'Content-Type': 'application/json',
     ...headers,
@@ -59,15 +68,18 @@ export const apiCall = async (endpoint, options = {}) => {
       body: body ? JSON.stringify(body) : null,
     });
 
+    console.log(`[API Response] ${response.status} ${url}`);
+
     // Handle unauthorized
     if (response.status === 401) {
       clearToken();
-      console.log(`Unauthorized ${response.status} ${response.message} ${response.url} ${response.headers}`)
+      console.log(`Unauthorized ACCESS Denied: ${response.status} ${response.url}`)
       window.location.href = '/login';
       throw new Error('Unauthorized. Please login again.');
     }
 
     const data = await response.json();
+    console.log(`[API Data]`, data);
 
     if (!response.ok) {
       throw {
@@ -84,7 +96,7 @@ export const apiCall = async (endpoint, options = {}) => {
 
     return data;
   } catch (error) {
-    console.error(`API Error [${method} ${endpoint}]:`, error);
+    console.error(`[API Error] ${method} ${endpoint}:`, error);
     throw error;
   }
 };

@@ -3,8 +3,10 @@ import { ENDPOINTS } from '../config/api';
 
 export const authService = {
   login: async (email, password) => {
+    console.log(`[AuthService] Initiating login for: ${email}`);
     const response = await apiPost(ENDPOINTS.AUTH.LOGIN, { email, password }, { skipAuth: true });
     if (response.token) {
+      console.log(`[AuthService] Login successful, storing session...`);
       const session = JSON.parse(localStorage.getItem('tn_activeSession') || '{}');
       localStorage.setItem('tn_activeSession', JSON.stringify({
         ...response.user,
