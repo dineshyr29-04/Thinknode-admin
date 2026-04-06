@@ -62,6 +62,7 @@ export const apiCall = async (endpoint, options = {}) => {
     // Handle unauthorized
     if (response.status === 401) {
       clearToken();
+      console.log(`Unauthorized ${response.status} ${response.message} ${response.url} ${response.headers}`)
       window.location.href = '/login';
       throw new Error('Unauthorized. Please login again.');
     }
