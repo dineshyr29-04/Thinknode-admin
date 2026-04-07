@@ -36,7 +36,7 @@
 
   .scrollbar-modern::-webkit-scrollbar-thumb {
     /* Pure white with a subtle "colorful" glow */
-    background: rgb(186, 105, 233);
+    background: blue-700;
     border-radius: 10px;
     box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.3);
   }

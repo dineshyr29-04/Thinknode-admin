@@ -103,16 +103,14 @@ export default function Sidebar() {
                   className={({ isActive }) => clsx(
                     'group relative flex items-center gap-3.5 px-3 py-[11px] rounded-xl text-sm font-medium transition-colors duration-150',
                     isActive
-                      ? 'bg-black-600/90 text-white shadow-lg shadow-blue-600/30 border-blue-700 border-l-[4px] scale-[1.1] lg:scale-107'
+                      ? 'bg-black-600/90 text-white shadow-lg shadow-blue-600/30 border-blue-700 border-l-[4px] scale-[1.1] lg:scale-105'
                       : 'text-violet-100 hover:text-white hover:bg-white/[0.07] hover:scale-[1.05]',
                   )}
                 >
                   {({ isActive }) => (
                     <>
                       {/* Active accent bar */}
-                      {/*isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-blue-200 rounded-r-full" />
-                      )*/}
+                      
 
                       <Icon size={18} className="flex-shrink-0" />
 
