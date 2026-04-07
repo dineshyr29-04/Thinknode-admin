@@ -141,7 +141,7 @@ export default function Clients() {
           <Search size={16} className="text-slate-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-300 outline-none placeholder-slate-400" />
         </div>
-        {isAdmin && (
+        { (
           <button onClick={() => setModal('add')} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-blue-600/20">
             <Plus size={16} />
             Add Client
