@@ -59,11 +59,11 @@ ThinkNode is a professional-grade, high-performance management dashboard designe
    ```
 
 3. **Configure Environment Variables**:
-   Create a `.env` file in the root directory and add the following:
+   Create a `.env` file in the root directory and add the following (use the deployed backend URL in production):
    ```env
-   VITE_API_URL=http://localhost:5000
+   VITE_API_URL=https://thinknode-backend.onrender.com/
    VITE_API_VERSION=/api
-   VITE_SOCKET_URL=http://localhost:5000
+   VITE_SOCKET_URL=https://thinknode-backend.onrender.com/
    ```
 
 4. **Launch the Development Server**:
